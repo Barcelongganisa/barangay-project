@@ -70,22 +70,28 @@
         <h4 class="fw-bold mb-0">Admin Portal</h4>
     </div>
     <nav class="d-flex flex-column p-2 mt-3">
-        <a href="{{ url('/dashboard') }}" class="nav-link text-white">
-            <i class="bi bi-house-door me-2"></i> Dashboard
-        </a>
-        <a href="{{ url('/manage-requests') }}" class="nav-link text-white">
-            <i class="bi bi-list-check me-2"></i> Manage Requests
-        </a>
-        <a href="{{ url('/manage-residents') }}" class="nav-link text-white">
-            <i class="bi bi-people me-2"></i> Manage Residents
-        </a>
-        <a href="{{ url('/reports') }}" class="nav-link text-white">
-            <i class="bi bi-bar-chart me-2"></i> Reports
-        </a>
-        <a href="{{ url('/logout') }}" class="nav-link text-white"> 
-            <i class="bi bi-box-arrow-right me-2"></i> Logout
-        </a>
-    </nav>
+    <a href="{{ route('admin.dashboard') }}" class="nav-link text-white">
+        <i class="bi bi-house-door me-2"></i> Dashboard
+    </a>
+    <a href="{{ route('admin.manage.requests') }}" class="nav-link text-white">
+        <i class="bi bi-list-check me-2"></i> Manage Requests
+    </a>
+    <a href="{{ route('admin.manage.residents') }}" class="nav-link text-white">
+        <i class="bi bi-people me-2"></i> Manage Residents
+    </a>
+    <a href="{{ route('admin.reports') }}" class="nav-link text-white">
+        <i class="bi bi-bar-chart me-2"></i> Reports
+    </a>
+    <a href="{{ route('logout') }}" class="nav-link text-white" 
+       onclick="event.preventDefault(); document.getElementById('logout-form').submit();">
+        <i class="bi bi-box-arrow-right me-2"></i> Logout
+    </a>
+    
+    <!-- Logout Form -->
+    <form id="logout-form" action="{{ route('logout') }}" method="POST" class="d-none">
+        @csrf
+    </form>
+</nav>
 </div>
 
 <!-- Sidebar JS -->
