@@ -1,5 +1,5 @@
 <?php
-
+use App\Http\Controllers\ResidentProfileController;
 use App\Http\Controllers\ProfileController;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\Auth;
@@ -25,6 +25,10 @@ Route::middleware(['auth'])->group(function () {
         Route::get('/documents', function () {
             return view('resident.documents');
         })->name('resident.documents');
+
+        Route::get('/profile', [ResidentProfileController::class, 'edit'])->name('resident.resident-profile');
+    Route::patch('/profile', [ResidentProfileController::class, 'update'])->name('resident.resident-profile.update');
+    Route::delete('/profile', [ResidentProfileController::class, 'destroy'])->name('resident.resident-profile.destroy');
     });
 });
 

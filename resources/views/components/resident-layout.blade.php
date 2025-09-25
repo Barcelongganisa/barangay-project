@@ -102,7 +102,7 @@
             <a href="{{ route('resident.documents') }}" class="nav-link text-white">
                 <i class="bi bi-file-earmark-text me-2"></i> Documents
             </a>
-            <a href="{{ route('profile.edit') }}" class="nav-link text-white">
+            <a href="{{ route('resident.resident-profile') }}" class="nav-link text-white">
                 <i class="bi bi-person me-2"></i> Profile
             </a>
             <a href="{{ route('logout') }}" class="nav-link text-white" 
@@ -121,7 +121,7 @@
     <div class="main-content" id="mainContent">
         <!-- Header -->
         <header class="text-white p-3 sticky-top" style="background-color: #0b2351;">
-            <div class="d-flex flex-column flex-md-row justify-content-between align-items-center">
+            <div class="d-flex flex-column flex-md-row justify-content-between align-items-center" style="height: 29px;">
                 <h1 class="h3 mb-2 mb-md-0 fw-bold">Dashboard</h1>
                 <div class="d-flex align-items-center">
                     <span class="text-white">Welcome, {{ Auth::user()->name ?? 'Resident User' }}</span>
