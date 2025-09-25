@@ -9,11 +9,14 @@
     <!-- Bootstrap Icons -->
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
     <style>
+        .body {
+            overflow: hidden;
+        }
         .main-content {
             margin-left: 250px;
-            padding: 20px;
+            /* padding: 20px; */
             transition: all 0.3s;
-            min-height: 100vh;
+            min-height: auto;
             background-color: #f8f9fa;
         }
         .card-hover:hover {
@@ -55,13 +58,12 @@
     @include('profile.partials.admin_sidebar')
 
     <!-- Main Content -->
+    {{--width: 86.96vw;
+        left: -20px;" 
+        top: -20px;--}}
     <div class="main-content" id="mainContent">
         <header class="text-white p-3 sticky-top" style="background-color: #0d3b8a; position: -webkit-sticky;
-            position: relative;
-            top: -20px;
-            /* z-index: 1020; */
-            width: 86.96vw;
-            left: -20px;">
+            position: relative;">
             <div class="d-flex flex-column flex-md-row justify-content-between align-items-center">
                 <h1 class="h4 mb-2 mb-md-0 fw-bold">Admin Dashboard</h1>
                 <div class="d-flex align-items-center">
