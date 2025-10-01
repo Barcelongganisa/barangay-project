@@ -1,6 +1,7 @@
 <?php
 use App\Http\Controllers\ResidentProfileController;
 use App\Http\Controllers\ProfileController;
+use App\Http\Controllers\ResidentController;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\Auth;
 
@@ -14,6 +15,7 @@ Route::middleware(['auth'])->group(function () {
 
     // Resident-specific routes
     Route::prefix('resident')->group(function () {
+
         Route::get('/new-request', function () {
             return view('resident.new-request');
         })->name('resident.new-request');
@@ -26,9 +28,24 @@ Route::middleware(['auth'])->group(function () {
             return view('resident.documents');
         })->name('resident.documents');
 
+        // Request details and download routes
+        Route::get('/requests/{id}', [ResidentController::class, 'showRequestDetails'])
+            ->name('resident.request.details');
+        
+        Route::get('/requests/{id}/download', [ResidentController::class, 'downloadDocument'])
+            ->name('resident.documents.download');
+
+        // Profile routes
         Route::get('/profile', [ResidentProfileController::class, 'edit'])->name('resident.resident-profile');
-    Route::patch('/profile', [ResidentProfileController::class, 'update'])->name('resident.resident-profile.update');
-    Route::delete('/profile', [ResidentProfileController::class, 'destroy'])->name('resident.resident-profile.destroy');
+        Route::patch('/profile', [ResidentProfileController::class, 'update'])->name('resident.resident-profile.update');
+        Route::delete('/profile', [ResidentProfileController::class, 'destroy'])->name('resident.resident-profile.destroy');
+        // // profile
+        // Route::patch('/profile/update-address', [ResidentProfileController::class, 'updateAddress'])
+        // ->name('resident.resident-profile.update-address');
+
+        // Create new request with documents
+        Route::post('/requests/upload', [ResidentController::class, 'storeRequestWithDocuments'])
+            ->name('resident.storeRequestWithDocuments');
     });
 });
 

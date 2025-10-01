@@ -11,6 +11,7 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Validation\Rules;
 use Illuminate\View\View;
+use App\Models\BarangayResident;
 
 class RegisteredUserController extends Controller
 {
@@ -28,29 +29,47 @@ class RegisteredUserController extends Controller
      * @throws \Illuminate\Validation\ValidationException
      */
     public function store(Request $request): RedirectResponse
-    {
-        $request->validate([
-            'name' => ['required', 'string', 'max:255'],
-            'email' => ['required', 'string', 'lowercase', 'email', 'max:255', 'unique:'.User::class],
-            'password' => ['required', 'confirmed', Rules\Password::defaults()],
-        ]);
+{
+    $request->validate([
+        'name' => ['required', 'string', 'max:255'],
+        'email' => ['required', 'string', 'lowercase', 'email', 'max:255', 'unique:'.User::class],
+        'password' => ['required', 'confirmed', Rules\Password::defaults()],
+    ]);
 
-        $user = User::create([
-            'name' => $request->name,
-            'email' => $request->email,
-            'password' => Hash::make($request->password),
-            'role' => 'resident', // <-- assign default role
-        ]);
+    // Create User
+    $user = User::create([
+        'name' => $request->name,
+        'email' => $request->email,
+        'password' => Hash::make($request->password),
+        'role' => 'resident',
+    ]);
 
-        event(new Registered($user));
+    // Create corresponding BarangayResident
+    BarangayResident::create([
+        'first_name' => $request->name, // if you only have 'name', store it here
+        'last_name' => '', // you can separate later if you want
+        'middle_name' => null,
+        'email' => $request->email,
+        'barangay_name' => 'Default Barangay', // change as needed
+        'household_no' => '',
+        'date_of_birth' => now(), // you may prompt user to update later
+        'gender' => 'Male', // default, can update later
+        'contact_number' => '',
+        'address' => '',
+        'civil_status' => 'Single',
+        'occupation' => 'N/A',
+        'created_at' => now(),
+        'updated_at' => now(),
+    ]);
 
-        Auth::login($user);
+    event(new Registered($user));
 
-        // Redirect based on role
-        if ($user->role === 'admin') {
-            return redirect()->route('admin.dashboard');
-        } else {
-            return redirect()->route('resident.dashboard'); // resident default
-        }
+    Auth::login($user);
+
+    if ($user->role === 'admin') {
+        return redirect()->route('admin.dashboard');
+    } else {
+        return redirect()->route('resident.dashboard');
     }
+}
 }

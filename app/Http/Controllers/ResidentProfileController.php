@@ -68,4 +68,18 @@ class ResidentProfileController extends Controller
 
         return Redirect::to('/');
     }
+
+//     public function updateAddress(Request $request)
+// {
+//     $request->validate([
+//         'address' => 'required|string|max:255',
+//         'barangay' => 'required|string|max:100',
+//         'city' => 'required|string|max:100',
+//         'zip_code' => 'required|string|max:10',
+//     ]);
+
+//     $request->user()->update($request->only(['address', 'barangay', 'city', 'zip_code']));
+
+//     return back()->with('status', 'address-updated');
+// }
 }

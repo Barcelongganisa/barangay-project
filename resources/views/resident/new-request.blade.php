@@ -276,35 +276,38 @@
         </div>
 
         <!-- Step 4: Review and Submit -->
-        <div class="card border-0 shadow mb-4" id="step4-content" style="display: none;">
-            <div class="card-body">
-                <h5 class="card-title">Review and Submit Request</h5>
-                <p class="text-muted mb-4">Please review your request details before submitting.</p>
+        <form id="service-request-form" enctype="multipart/form-data" method="POST" action="{{ route('resident.storeRequestWithDocuments') }}">
+            @csrf
+            <div class="card border-0 shadow mb-4" id="step4-content" style="display: none;">
+                <div class="card-body">
+                    <h5 class="card-title">Review and Submit Request</h5>
+                    <p class="text-muted mb-4">Please review your request details before submitting.</p>
 
-                <div class="card mb-4">
-                    <div class="card-header bg-light">
-                        <h6 class="mb-0">Request Summary</h6>
-                    </div>
-                    <div class="card-body">
-                        <div class="row" id="review-summary">
-                            <!-- Summary will be dynamically inserted here -->
+                    <div class="card mb-4">
+                        <div class="card-header bg-light">
+                            <h6 class="mb-0">Request Summary</h6>
+                        </div>
+                        <div class="card-body">
+                            <div class="row" id="review-summary">
+                                <!-- Summary will be dynamically inserted here -->
+                            </div>
                         </div>
                     </div>
-                </div>
 
-                <div class="form-check mb-4">
-                    <input class="form-check-input" type="checkbox" id="terms-agreement">
-                    <label class="form-check-label" for="terms-agreement">
-                        I certify that the information provided is true and correct. I understand that providing false information may result in penalties.
-                    </label>
-                </div>
+                    <div class="form-check mb-4">
+                        <input class="form-check-input" type="checkbox" id="terms-agreement">
+                        <label class="form-check-label" for="terms-agreement">
+                            I certify that the information provided is true and correct. I understand that providing false information may result in penalties.
+                        </label>
+                    </div>
 
-                <div class="d-flex justify-content-between mt-4">
-                    <button class="btn btn-secondary" id="backToStep3"><i class="bi bi-arrow-left"></i> Back</button>
-                    <button class="btn btn-success" id="submit-request" disabled>Submit Request</button>
+                    <div class="d-flex justify-content-between mt-4">
+                        <button class="btn btn-secondary" id="backToStep3"><i class="bi bi-arrow-left"></i> Back</button>
+                        <button class="btn btn-success" id="submit-request" disabled>Submit Request</button>
+                    </div>
                 </div>
             </div>
-        </div>
+        </form>
     </div>
 
     <!-- Success Modal -->
@@ -531,24 +534,23 @@
             });
 
             document.getElementById('nextToStep4').addEventListener('click', function() {
-                // Basic validation for documents
-                let allRequiredUploaded = true;
-
+                // Enhanced validation for documents
+                let missingDocuments = [];
+                
                 serviceDetails[selectedService].documents.forEach((doc, index) => {
-                    if (doc.required && !document.getElementById(`doc-${index}`).value) {
-                        allRequiredUploaded = false;
+                    const fileInput = document.getElementById(`doc-${index}`);
+                    if (doc.required && (!fileInput || !fileInput.files[0])) {
+                        missingDocuments.push(doc.name);
                     }
                 });
 
-                if (!allRequiredUploaded) {
-                    alert('Please upload all required documents.');
+                if (missingDocuments.length > 0) {
+                    alert('Please upload the following required documents:\n• ' + missingDocuments.join('\n• '));
                     return;
                 }
 
                 showStep(4);
-
-                // Generate review summary
-                generateReviewSummary();
+                generateReviewSummary(); // This should work now
             });
 
             document.getElementById('backToStep3').addEventListener('click', function() {
@@ -561,24 +563,93 @@
             });
 
             // Submit request
-            document.getElementById('submit-request').addEventListener('click', function() {
-                // Show loading state
-                const submitBtn = document.getElementById('submit-request');
-                const originalText = submitBtn.innerHTML;
-                submitBtn.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Submitting...';
-                submitBtn.disabled = true;
+            // Submit request
+// Submit request - UPDATED VERSION
+document.getElementById('submit-request').addEventListener('click', function(event) {
+    event.preventDefault();
+    
+    const submitBtn = this;
+    submitBtn.disabled = true;
+    submitBtn.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Submitting...';
 
-                // Simulate submission process
-                setTimeout(function() {
-                    // Show success modal
-                    const successModal = new bootstrap.Modal(document.getElementById('successModal'));
-                    successModal.show();
+    // Build FormData
+    const formData = new FormData();
+    formData.append('_token', '{{ csrf_token() }}');
+    formData.append('service_type', selectedService);
+    formData.append('purpose', document.getElementById('purpose').value);
 
-                    // Reset button
-                    submitBtn.innerHTML = originalText;
-                    submitBtn.disabled = false;
-                }, 2000);
-            });
+    // Append documents
+    let hasRequiredDocuments = false;
+    serviceDetails[selectedService].documents.forEach((doc, index) => {
+        const fileInput = document.getElementById(`doc-${index}`);
+        if(fileInput && fileInput.files[0]) {
+            hasRequiredDocuments = true;
+            formData.append(`documents[${index}][file]`, fileInput.files[0]);
+            formData.append(`documents[${index}][document_type]`, doc.name);
+        }
+    });
+
+    // Check if required documents are uploaded
+    if (!hasRequiredDocuments) {
+        alert('Please upload at least one required document.');
+        submitBtn.disabled = false;
+        submitBtn.innerHTML = 'Submit Request';
+        return;
+    }
+
+    console.log('Submitting to: {{ route("resident.storeRequestWithDocuments") }}');
+    
+    // Submit via fetch - USING CORRECT ROUTE
+    fetch('{{ route("resident.storeRequestWithDocuments") }}', {
+        method: 'POST',
+        body: formData,
+        headers: {
+            'X-Requested-With': 'XMLHttpRequest',
+            'Accept': 'application/json',
+        },
+    })
+    .then(async response => {
+        console.log('Response status:', response.status);
+        
+        if (!response.ok) {
+            const errorText = await response.text();
+            console.error('Server error response:', errorText);
+            throw new Error(`Server error: ${response.status}`);
+        }
+        
+        return response.json();
+    })
+    .then(data => {
+        console.log('Success response:', data);
+        
+        // Show success modal
+        const successModal = new bootstrap.Modal(document.getElementById('successModal'));
+        successModal.show();
+
+        // Reset everything
+        resetForm();
+    })
+    .catch(error => {
+        console.error('Submission error:', error);
+        alert('Failed to submit request. Please check the console for details.');
+    })
+    .finally(() => {
+        submitBtn.disabled = false;
+        submitBtn.innerHTML = 'Submit Request';
+    });
+});
+
+// Function to reset the form
+function resetForm() {
+    document.getElementById('service-request-form').reset();
+    showStep(1);
+    selectedService = null;
+    document.querySelectorAll('.service-card').forEach(card => {
+        card.classList.remove('selected');
+    });
+    document.getElementById('nextToStep2').disabled = true;
+    document.getElementById('terms-agreement').checked = false;
+}
 
             // View requests button
             document.getElementById('view-requests').addEventListener('click', function() {
@@ -612,53 +683,83 @@
                 currentStep = step;
             }
 
-            // Function to generate review summary
-            function generateReviewSummary() {
-                const summaryContainer = document.getElementById('review-summary');
-                let summaryHTML = `
-                    <div class="col-md-6">
-                        <p><strong>Service Type:</strong> ${serviceDetails[selectedService].name}</p>
-                        <p><strong>Purpose:</strong> ${document.getElementById('purpose').value}</p>
-                    </div>
-                    <div class="col-md-6">
-                        <p><strong>Submitted On:</strong> ${new Date().toLocaleDateString()}</p>
-                        <p><strong>Status:</strong> <span class="badge bg-secondary">Pending</span></p>
-                `;
+            // Function to generate review summary - FIXED VERSION
+function generateReviewSummary() {
+    const summaryContainer = document.getElementById('review-summary');
+    let summaryHTML = `
+        <div class="col-md-6">
+            <p><strong>Service Type:</strong> ${serviceDetails[selectedService].name}</p>
+            <p><strong>Purpose:</strong> ${document.getElementById('purpose').value}</p>
+    `;
 
-                // Add service-specific details
-                if (selectedService === 'clearance') {
-                    summaryHTML += `
-                        <p><strong>Business Type:</strong> ${document.getElementById('business-type').value || 'N/A'}</p>
-                        <p><strong>Needed By:</strong> ${document.getElementById('clearance-date').value || 'Not specified'}</p>
-                    `;
-                } else if (selectedService === 'residency') {
-                    summaryHTML += `
-                        <p><strong>Years of Residency:</strong> ${document.getElementById('residency-years').value || 'Not specified'}</p>
-                        <p><strong>Needed By:</strong> ${document.getElementById('residency-date').value || 'Not specified'}</p>
-                    `;
-                } else if (selectedService === 'indigency') {
-                    summaryHTML += `
-                        <p><strong>Family Size:</strong> ${document.getElementById('family-size').value || 'Not specified'}</p>
-                        <p><strong>Monthly Income:</strong> ₱${document.getElementById('monthly-income').value || 'Not specified'}</p>
-                    `;
-                } else if (selectedService === 'business') {
-                    summaryHTML += `
-                        <p><strong>Business Name:</strong> ${document.getElementById('business-name').value || 'Not specified'}</p>
-                        <p><strong>Business Type:</strong> ${document.getElementById('business-type').options[document.getElementById('business-type').selectedIndex].text}</p>
-                    `;
-                } else if (selectedService === 'id') {
-                    summaryHTML += `
-                        <p><strong>Needed By:</strong> ${document.getElementById('id-date').value || 'Not specified'}</p>
-                    `;
-                } else if (selectedService === 'other') {
-                    summaryHTML += `
-                        <p><strong>Request Type:</strong> ${document.getElementById('request-type').value || 'Not specified'}</p>
-                    `;
-                }
+    // Add service-specific details
+    if (selectedService === 'clearance') {
+        const businessType = document.getElementById('business-type')?.value || 'N/A';
+        const neededBy = document.getElementById('clearance-date')?.value || 'Not specified';
+        summaryHTML += `
+            <p><strong>Business Type:</strong> ${businessType}</p>
+            <p><strong>Needed By:</strong> ${neededBy}</p>
+        `;
+    } else if (selectedService === 'residency') {
+        const years = document.getElementById('residency-years')?.value || 'Not specified';
+        const neededBy = document.getElementById('residency-date')?.value || 'Not specified';
+        summaryHTML += `
+            <p><strong>Years of Residency:</strong> ${years}</p>
+            <p><strong>Needed By:</strong> ${neededBy}</p>
+        `;
+    } else if (selectedService === 'indigency') {
+        const familySize = document.getElementById('family-size')?.value || 'Not specified';
+        const monthlyIncome = document.getElementById('monthly-income')?.value || 'Not specified';
+        summaryHTML += `
+            <p><strong>Family Size:</strong> ${familySize}</p>
+            <p><strong>Monthly Income:</strong> ₱${monthlyIncome}</p>
+        `;
+    } else if (selectedService === 'business') {
+        const businessName = document.getElementById('business-name')?.value || 'Not specified';
+        const businessType = document.getElementById('business-type')?.options[document.getElementById('business-type')?.selectedIndex]?.text || 'Not specified';
+        summaryHTML += `
+            <p><strong>Business Name:</strong> ${businessName}</p>
+            <p><strong>Business Type:</strong> ${businessType}</p>
+        `;
+    } else if (selectedService === 'id') {
+        const neededBy = document.getElementById('id-date')?.value || 'Not specified';
+        summaryHTML += `
+            <p><strong>Needed By:</strong> ${neededBy}</p>
+        `;
+    } else if (selectedService === 'other') {
+        const requestType = document.getElementById('request-type')?.value || 'Not specified';
+        summaryHTML += `
+            <p><strong>Request Type:</strong> ${requestType}</p>
+        `;
+    }
 
-                summaryHTML += `</div>`;
-                summaryContainer.innerHTML = summaryHTML;
-            }
+    summaryHTML += `</div>`;
+    
+    // Add documents section
+    summaryHTML += `
+        <div class="col-md-6">
+            <p><strong>Submitted On:</strong> ${new Date().toLocaleDateString()}</p>
+            <p><strong>Status:</strong> <span class="badge bg-secondary">Pending</span></p>
+            <p><strong>Required Documents:</strong></p>
+            <ul class="small">
+    `;
+    
+    serviceDetails[selectedService].documents.forEach((doc, index) => {
+        const fileInput = document.getElementById(`doc-${index}`);
+        const status = fileInput && fileInput.files[0] ? 
+            `<span class="text-success">✓ Uploaded</span>` : 
+            `<span class="text-danger">✗ Missing</span>`;
+        
+        summaryHTML += `<li>${doc.name}: ${status}</li>`;
+    });
+    
+    summaryHTML += `
+            </ul>
+        </div>
+    `;
+    
+    summaryContainer.innerHTML = summaryHTML;
+}
         });
     </script>
 </x-resident-layout>
