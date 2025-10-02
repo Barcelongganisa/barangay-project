@@ -1,5 +1,9 @@
 <x-resident-layout>
     <style>
+        body {
+        overflow-x: hidden;
+        }
+
         .profile-img {
             width: 120px;
             height: 120px;
@@ -10,41 +14,35 @@
         }
     </style>
 
-    <div class="container-fluid p-4">
-         <div class="alert alert-info mb-4">
-        <h6>Debug Information:</h6>
-        <p><strong>User ID:</strong> {{ Auth::id() }}</p>
-        <p><strong>Resident Data ID:</strong> {{ $residentData->resident_id ?? 'No resident data' }}</p>
-        <p><strong>Session Data:</strong> {{ json_encode(session()->all()) }}</p>
-        <p><strong>Old Form Data:</strong> {{ json_encode(old()) }}</p>
-    </div>
         <!-- Profile Header Card -->
-        <div class="card profile-header border-0 shadow mb-4 text-white">
+        {{-- <center> --}}
+        <div class="card border-0 shadow mb-4 mt-4 col-lg-10 col-xl-11 mx-auto">
             <div class="card-body">
                 <div class="row align-items-center">
                     <div class="col-md-3 text-center mb-4 mb-md-0">
-                        <img src="data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTIwIiBoZWlnaHQ9IjEyMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIiBzdHlsZT0iYmFja2dyb3VuZC1jb2xvcjojZmZmO2JvcmRlci1yYWRpdXM6NTAlOyI+PHRleHQgeD0iNTAlIiB5PSI1MCUiIGRvbWluYW50LWJhc2VsaW5lPSJtaWRkbGUiIHRleHQtYW5jaG9yPSJtaWRkbGUiIGZvbnQtZmFtaWx5PSJtb25vc3BhY2UiIGZvbnQtc2l6ZT0iMjBweCIgZmlsbD0iIzY0NzQ4YiI+VVNFUjwvdGV4dD48L3N2Zz4=" 
+                        <img src="data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTIwIiBoZWlnaHQ9IjEyMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIiBzdHlsZT0iYmFja2dyb3VuZC1jb2xvcjojZjJmMmYyO2JvcmRlci1yYWRpdXM6NTAlOyI+PHRleHQgeD0iNTAlIiB5PSI1MCUiIGRvbWluYW50LWJhc2VsaW5lPSJtaWRkbGUiIHRleHQtYW5jaG9yPSJtaWRkbGUiIGZvbnQtZmFtaWx5PSJtb25vc3BhY2UiIGZvbnQtc2l6ZT0iMjBweCIgZmlsbD0iIzY0NzQ4YiI+VVNFUjwvdGV4dD48L3N2Zz4="
                              alt="Profile" class="profile-img rounded-circle shadow">
                         <div class="mt-3">
-                            <button class="btn btn-sm btn-light">
+                            <button class="btn btn-sm btn-outline-primary">
                                 <i class="bi bi-camera me-1"></i> Change Photo
                             </button>
                         </div>
                     </div>
                     <div class="col-md-9">
                         <h4 class="mb-1">{{ Auth::user()->name }}</h4>
-                        <p class="mb-2 opacity-75">Joined since: {{ Auth::user()->created_at->format('F Y') }}</p>
+                        <p class="text-muted mb-2">Joined since: {{ Auth::user()->created_at->format('F Y') }}</p>
                         <div class="d-flex flex-wrap gap-2">
-                            <span class="badge bg-success bg-opacity-25 text-white border-0">Verified Resident</span>
-                            <span class="badge bg-info bg-opacity-25 text-white border-0">Active</span>
+                            <span class="badge bg-success">Resident</span>
+                            <span class="badge bg-info">Active</span>
                         </div>
                     </div>
                 </div>
             </div>
         </div>
+    {{-- </center> --}}
 
         <div class="row justify-content-center">
-            <div class="col-lg-10 col-xl-8">
+            <div class="col-lg-10 col-xl-11">
                 <!-- Personal Information -->
                 <div class="card border-0 shadow mb-4">
                     <div class="card-header bg-white py-3">
@@ -229,7 +227,7 @@
                 </div>
 
                 <!-- Delete Account -->
-                <div class="card border-0 shadow border-danger">
+                <div class="card border-0 shadow border-danger mb-4">
                     <div class="card-body">
                         <h5 class="card-title mb-4 text-danger">Delete Account</h5>
                         <p class="text-muted mb-4">
