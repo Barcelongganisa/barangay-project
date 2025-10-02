@@ -36,10 +36,14 @@ Route::middleware(['auth'])->group(function () {
         Route::get('/requests/{id}/download', [ResidentController::class, 'downloadDocument'])
             ->name('documents.download');
 
-        // Profile routes - FIXED: Using proper naming convention
+        // Profile routes
         Route::get('/profile', [ResidentProfileController::class, 'edit'])->name('resident-profile');
         Route::patch('/profile', [ResidentProfileController::class, 'update'])->name('resident-profile.update');
         Route::delete('/profile', [ResidentProfileController::class, 'destroy'])->name('resident-profile.destroy');
+
+        // Profile photo update route - FIXED: Make sure this is inside the prefix group
+        Route::patch('/profile/photo', [ResidentProfileController::class, 'updatePhoto'])
+            ->name('profile-photo.update'); // This will be 'resident.profile-photo.update'
 
         // Create new request with documents
         Route::post('/requests/upload', [ResidentController::class, 'storeRequestWithDocuments'])

@@ -33,45 +33,64 @@ class ResidentProfileController extends Controller
     /**
      * Update the user's profile information.
      */
-public function update(Request $request)
-{
-    $user = Auth::user();
+    public function update(Request $request)
+    {
+        $user = Auth::user();
 
-    // Validate incoming data
-    $validated = $request->validate([
-        'first_name' => 'required|string|max:255',
-        'middle_name' => 'nullable|string|max:255',
-        'last_name' => 'required|string|max:255',
-        'email' => 'required|email',
-        'phone' => 'nullable|string|max:20',
-        'birthdate' => 'required|date',
-        'gender' => 'required|string',
-        'civil_status' => 'required|string',
-        'occupation' => 'required|string',
-        'barangay' => 'required|string',
-        'address' => 'required|string',
-    ]);
+        // Validate incoming data
+        $validated = $request->validate([
+            'first_name' => 'required|string|max:255',
+            'middle_name' => 'nullable|string|max:255',
+            'last_name' => 'required|string|max:255',
+            'email' => 'required|email',
+            'phone' => 'nullable|string|max:20',
+            'birthdate' => 'required|date',
+            'gender' => 'required|string',
+            'civil_status' => 'required|string',
+            'occupation' => 'required|string',
+            'barangay' => 'required|string',
+            'address' => 'required|string',
+        ]);
 
-    // ✅ Update users table
-   DB::table('users')
-    ->where('id', $user->id)
-    ->update([
-        'name' => $validated['first_name'] . ' ' . ($validated['middle_name'] ?? '') . ' ' . $validated['last_name'],
-        'email' => $validated['email'],
-        'updated_at' => now(),
-    ]);
+        // ✅ Update users table
+    DB::table('users')
+        ->where('id', $user->id)
+        ->update([
+            'name' => $validated['first_name'] . ' ' . ($validated['middle_name'] ?? '') . ' ' . $validated['last_name'],
+            'email' => $validated['email'],
+            'updated_at' => now(),
+        ]);
 
 
-    // ✅ Check if resident exists in barangay_residents
-    $barangayResident = DB::table('barangay_residents')
-        ->where('resident_id', $user->id)
-        ->first();
-
-    if ($barangayResident) {
-        // Update existing record
-        DB::table('barangay_residents')
+        // ✅ Check if resident exists in barangay_residents
+        $barangayResident = DB::table('barangay_residents')
             ->where('resident_id', $user->id)
-            ->update([
+            ->first();
+
+        if ($barangayResident) {
+            // Update existing record
+            DB::table('barangay_residents')
+                ->where('resident_id', $user->id)
+                ->update([
+                    'contact_number' => $validated['phone'],
+                    'date_of_birth' => $validated['birthdate'],
+                    'gender' => $validated['gender'],
+                    'civil_status' => $validated['civil_status'],
+                    'occupation' => $validated['occupation'],
+                    'barangay_name' => $validated['barangay'],
+                    'address' => $validated['address'],
+                    'first_name' => $validated['first_name'],
+                    'middle_name' => $validated['middle_name'] ?? null,
+                    'last_name' => $validated['last_name'],
+                    'updated_at' => now(),
+                ]);
+        } else {
+            // Insert new record if not exists
+            DB::table('barangay_residents')->insert([
+                'resident_id' => $user->id,
+                'first_name' => $validated['first_name'],
+                'middle_name' => $validated['middle_name'] ?? null,
+                'last_name' => $validated['last_name'],
                 'contact_number' => $validated['phone'],
                 'date_of_birth' => $validated['birthdate'],
                 'gender' => $validated['gender'],
@@ -79,34 +98,38 @@ public function update(Request $request)
                 'occupation' => $validated['occupation'],
                 'barangay_name' => $validated['barangay'],
                 'address' => $validated['address'],
-                'first_name' => $validated['first_name'],
-                'middle_name' => $validated['middle_name'] ?? null,
-                'last_name' => $validated['last_name'],
+                'created_at' => now(),
                 'updated_at' => now(),
             ]);
-    } else {
-        // Insert new record if not exists
-        DB::table('barangay_residents')->insert([
-            'resident_id' => $user->id,
-            'first_name' => $validated['first_name'],
-            'middle_name' => $validated['middle_name'] ?? null,
-            'last_name' => $validated['last_name'],
-            'contact_number' => $validated['phone'],
-            'date_of_birth' => $validated['birthdate'],
-            'gender' => $validated['gender'],
-            'civil_status' => $validated['civil_status'],
-            'occupation' => $validated['occupation'],
-            'barangay_name' => $validated['barangay'],
-            'address' => $validated['address'],
-            'created_at' => now(),
-            'updated_at' => now(),
-        ]);
+        }
+
+        return redirect()->route('resident.resident-profile')
+            ->with('status', 'profile-updated');
     }
 
-    return redirect()->route('resident.resident-profile')
-        ->with('status', 'profile-updated');
-}
+    public function updatePhoto(Request $request): RedirectResponse
+    {
+        $request->validate([
+            'profile_photo' => 'required|image|mimes:jpg,jpeg,png|max:2048', // 2MB max
+        ]);
 
+        $user = $request->user();
+
+        // Store the image in public storage
+        $path = $request->file('profile_photo')->store('profile-photos', 'public');
+
+        // Optionally, delete old photo
+        if ($user->profile_photo_path) {
+            \Storage::disk('public')->delete($user->profile_photo_path);
+        }
+
+        // Save new path in database
+        $user->profile_photo_path = $path;
+        $user->save();
+
+        return Redirect::route('resident.resident-profile')
+            ->with('status', 'photo-updated');
+    }
 
     /**
      * Update the user's password.
