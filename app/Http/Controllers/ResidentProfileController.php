@@ -6,6 +6,7 @@ use App\Http\Requests\ProfileUpdateRequest;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Redirect;
 use Illuminate\View\View;
 
@@ -16,27 +17,96 @@ class ResidentProfileController extends Controller
      */
     public function edit(Request $request): View
     {
+        $user = $request->user();
+
+        // Fetch barangay resident data
+        $residentData = DB::table('barangay_residents')
+            ->where('resident_id', $user->id)
+            ->first();
+
         return view('resident.resident-profile', [
-            'user' => $request->user(),
+            'user' => $user,
+            'residentData' => $residentData,
         ]);
     }
 
     /**
      * Update the user's profile information.
      */
-    public function update(ProfileUpdateRequest $request): RedirectResponse
-    {
-        $request->user()->fill($request->validated());
+public function update(Request $request)
+{
+    $user = Auth::user();
 
-        if ($request->user()->isDirty('email')) {
-            $request->user()->email_verified_at = null;
-        }
+    // Validate incoming data
+    $validated = $request->validate([
+        'first_name' => 'required|string|max:255',
+        'middle_name' => 'nullable|string|max:255',
+        'last_name' => 'required|string|max:255',
+        'email' => 'required|email',
+        'phone' => 'nullable|string|max:20',
+        'birthdate' => 'required|date',
+        'gender' => 'required|string',
+        'civil_status' => 'required|string',
+        'occupation' => 'required|string',
+        'barangay' => 'required|string',
+        'address' => 'required|string',
+    ]);
 
-        $request->user()->save();
+    // ✅ Update users table
+   DB::table('users')
+    ->where('id', $user->id)
+    ->update([
+        'name' => $validated['first_name'] . ' ' . ($validated['middle_name'] ?? '') . ' ' . $validated['last_name'],
+        'email' => $validated['email'],
+        'updated_at' => now(),
+    ]);
 
-        // Redirect back to the resident profile page with success message
-        return Redirect::route('resident.resident-profile')->with('status', 'profile-updated');
+
+    // ✅ Check if resident exists in barangay_residents
+    $barangayResident = DB::table('barangay_residents')
+        ->where('resident_id', $user->id)
+        ->first();
+
+    if ($barangayResident) {
+        // Update existing record
+        DB::table('barangay_residents')
+            ->where('resident_id', $user->id)
+            ->update([
+                'contact_number' => $validated['phone'],
+                'date_of_birth' => $validated['birthdate'],
+                'gender' => $validated['gender'],
+                'civil_status' => $validated['civil_status'],
+                'occupation' => $validated['occupation'],
+                'barangay_name' => $validated['barangay'],
+                'address' => $validated['address'],
+                'first_name' => $validated['first_name'],
+                'middle_name' => $validated['middle_name'] ?? null,
+                'last_name' => $validated['last_name'],
+                'updated_at' => now(),
+            ]);
+    } else {
+        // Insert new record if not exists
+        DB::table('barangay_residents')->insert([
+            'resident_id' => $user->id,
+            'first_name' => $validated['first_name'],
+            'middle_name' => $validated['middle_name'] ?? null,
+            'last_name' => $validated['last_name'],
+            'contact_number' => $validated['phone'],
+            'date_of_birth' => $validated['birthdate'],
+            'gender' => $validated['gender'],
+            'civil_status' => $validated['civil_status'],
+            'occupation' => $validated['occupation'],
+            'barangay_name' => $validated['barangay'],
+            'address' => $validated['address'],
+            'created_at' => now(),
+            'updated_at' => now(),
+        ]);
     }
+
+    return redirect()->route('resident.resident-profile')
+        ->with('status', 'profile-updated');
+}
+
 
     /**
      * Update the user's password.
@@ -68,18 +138,4 @@ class ResidentProfileController extends Controller
 
         return Redirect::to('/');
     }
-
-//     public function updateAddress(Request $request)
-// {
-//     $request->validate([
-//         'address' => 'required|string|max:255',
-//         'barangay' => 'required|string|max:100',
-//         'city' => 'required|string|max:100',
-//         'zip_code' => 'required|string|max:10',
-//     ]);
-
-//     $request->user()->update($request->only(['address', 'barangay', 'city', 'zip_code']));
-
-//     return back()->with('status', 'address-updated');
-// }
 }

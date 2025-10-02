@@ -1,4 +1,5 @@
 <?php
+
 use App\Http\Controllers\ResidentProfileController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\ResidentController;
@@ -14,38 +15,35 @@ Route::middleware(['auth'])->group(function () {
     })->name('dashboard');
 
     // Resident-specific routes
-    Route::prefix('resident')->group(function () {
+    Route::prefix('resident')->name('resident.')->group(function () {
 
         Route::get('/new-request', function () {
             return view('resident.new-request');
-        })->name('resident.new-request');
+        })->name('new-request');
         
         Route::get('/requests', function () {
             return view('resident.requests');
-        })->name('resident.requests');
+        })->name('requests');
         
         Route::get('/documents', function () {
             return view('resident.documents');
-        })->name('resident.documents');
+        })->name('documents');
 
         // Request details and download routes
         Route::get('/requests/{id}', [ResidentController::class, 'showRequestDetails'])
-            ->name('resident.request.details');
+            ->name('request.details');
         
         Route::get('/requests/{id}/download', [ResidentController::class, 'downloadDocument'])
-            ->name('resident.documents.download');
+            ->name('documents.download');
 
-        // Profile routes
-        Route::get('/profile', [ResidentProfileController::class, 'edit'])->name('resident.resident-profile');
-        Route::patch('/profile', [ResidentProfileController::class, 'update'])->name('resident.resident-profile.update');
-        Route::delete('/profile', [ResidentProfileController::class, 'destroy'])->name('resident.resident-profile.destroy');
-        // // profile
-        // Route::patch('/profile/update-address', [ResidentProfileController::class, 'updateAddress'])
-        // ->name('resident.resident-profile.update-address');
+        // Profile routes - FIXED: Using proper naming convention
+        Route::get('/profile', [ResidentProfileController::class, 'edit'])->name('resident-profile');
+        Route::patch('/profile', [ResidentProfileController::class, 'update'])->name('resident-profile.update');
+        Route::delete('/profile', [ResidentProfileController::class, 'destroy'])->name('resident-profile.destroy');
 
         // Create new request with documents
         Route::post('/requests/upload', [ResidentController::class, 'storeRequestWithDocuments'])
-            ->name('resident.storeRequestWithDocuments');
+            ->name('storeRequestWithDocuments');
     });
 });
 
@@ -80,6 +78,7 @@ Route::middleware(['auth'])->prefix('admin')->group(function () {
     })->name('admin.reports');
 });
 
+// Default Laravel Breeze profile routes
 Route::middleware('auth')->group(function () {
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
     Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
