@@ -22,6 +22,8 @@
             position: relative;
             height: 300px;
         }
+        .trend-up { color: #198754; }
+        .trend-down { color: #dc3545; }
     </style>
 
     <div class="main-content" id="mainContent">
@@ -29,19 +31,26 @@
             
             <!-- Export & Filter -->
             <div class="d-flex justify-content-end ms-auto mb-3">
-                <button class="btn btn-primary me-2">
+                <button class="btn btn-primary me-2" onclick="exportReport()">
                     <i class="bi bi-download me-1"></i> Export Report
                 </button>
                 <div class="dropdown">
                     <button class="btn btn-outline-secondary dropdown-toggle" type="button" id="timeRangeDropdown" data-bs-toggle="dropdown" aria-expanded="false">
-                        Last 30 Days
+                        @php
+                            $rangeLabels = [
+                                '7days' => 'Last 7 Days',
+                                '30days' => 'Last 30 Days', 
+                                '90days' => 'Last 90 Days',
+                                'year' => 'This Year'
+                            ];
+                        @endphp
+                        {{ $rangeLabels[$timeRange] ?? 'Last 30 Days' }}
                     </button>
                     <ul class="dropdown-menu" aria-labelledby="timeRangeDropdown">
-                        <li><a class="dropdown-item" href="#">Last 7 Days</a></li>
-                        <li><a class="dropdown-item" href="#">Last 30 Days</a></li>
-                        <li><a class="dropdown-item" href="#">Last 90 Days</a></li>
-                        <li><a class="dropdown-item" href="#">This Year</a></li>
-                        <li><a class="dropdown-item" href="#">Custom Range</a></li>
+                        <li><a class="dropdown-item" href="?time_range=7days">Last 7 Days</a></li>
+                        <li><a class="dropdown-item" href="?time_range=30days">Last 30 Days</a></li>
+                        <li><a class="dropdown-item" href="?time_range=90days">Last 90 Days</a></li>
+                        <li><a class="dropdown-item" href="?time_range=year">This Year</a></li>
                     </ul>
                 </div>
             </div>
@@ -54,12 +63,22 @@
                             <div class="d-flex justify-content-between align-items-center">
                                 <div>
                                     <h6 class="text-muted mb-1">Total Requests</h6>
-                                    <h2 class="fw-bold mb-0">185</h2>
+                                    <h2 class="fw-bold mb-0">{{ $totalRequests }}</h2>
+                                    @if(isset($previousPeriodData['totalRequests']))
+                                        @php
+                                            $previousTotal = $previousPeriodData['totalRequests'];
+                                            $trend = $previousTotal > 0 ? (($totalRequests - $previousTotal) / $previousTotal) * 100 : 0;
+                                        @endphp
+                                        <small class="{{ $trend >= 0 ? 'trend-up' : 'trend-down' }}">
+                                            <i class="bi bi-arrow-{{ $trend >= 0 ? 'up' : 'down' }}-circle"></i>
+                                            {{ abs(round($trend, 1)) }}% from previous period
+                                        </small>
+                                    @endif
                                 </div>
                                 <i class="bi bi-file-earmark-text text-primary fs-4"></i>
                             </div>
                             <div class="mt-2">
-                                <span class="badge bg-success">+12% from last month</span>
+                                <span class="badge bg-success">Real-time data</span>
                             </div>
                         </div>
                     </div>
@@ -70,12 +89,27 @@
                             <div class="d-flex justify-content-between align-items-center">
                                 <div>
                                     <h6 class="text-muted mb-1">Completed Requests</h6>
-                                    <h2 class="fw-bold text-success mb-0">142</h2>
+                                    <h2 class="fw-bold text-success mb-0">{{ $completedRequests }}</h2>
+                                    @if(isset($previousPeriodData['completedRequests']))
+                                        @php
+                                            $previousCompleted = $previousPeriodData['completedRequests'];
+                                            $trend = $previousCompleted > 0 ? (($completedRequests - $previousCompleted) / $previousCompleted) * 100 : 0;
+                                        @endphp
+                                        <small class="{{ $trend >= 0 ? 'trend-up' : 'trend-down' }}">
+                                            <i class="bi bi-arrow-{{ $trend >= 0 ? 'up' : 'down' }}-circle"></i>
+                                            {{ abs(round($trend, 1)) }}% from previous period
+                                        </small>
+                                    @endif
                                 </div>
                                 <i class="bi bi-check-circle text-success fs-4"></i>
                             </div>
                             <div class="mt-2">
-                                <span class="badge bg-success">76.8% completion rate</span>
+                                <span class="badge bg-success">
+                                    @php
+                                        $completionRate = $totalRequests > 0 ? round(($completedRequests / $totalRequests) * 100, 1) : 0;
+                                    @endphp
+                                    {{ $completionRate }}% completion rate
+                                </span>
                             </div>
                         </div>
                     </div>
@@ -86,12 +120,27 @@
                             <div class="d-flex justify-content-between align-items-center">
                                 <div>
                                     <h6 class="text-muted mb-1">Revenue Generated</h6>
-                                    <h2 class="fw-bold text-warning mb-0">₱7,250</h2>
+                                    <h2 class="fw-bold text-warning mb-0">₱{{ number_format($revenueGenerated, 2) }}</h2>
+                                    @if(isset($previousPeriodData['revenueGenerated']))
+                                        @php
+                                            $previousRevenue = $previousPeriodData['revenueGenerated'];
+                                            $trend = $previousRevenue > 0 ? (($revenueGenerated - $previousRevenue) / $previousRevenue) * 100 : 0;
+                                        @endphp
+                                        <small class="{{ $trend >= 0 ? 'trend-up' : 'trend-down' }}">
+                                            <i class="bi bi-arrow-{{ $trend >= 0 ? 'up' : 'down' }}-circle"></i>
+                                            {{ abs(round($trend, 1)) }}% from previous period
+                                        </small>
+                                    @endif
                                 </div>
                                 <i class="bi bi-currency-exchange text-warning fs-4"></i>
                             </div>
                             <div class="mt-2">
-                                <span class="badge bg-success">+18% from last month</span>
+                                <span class="badge bg-success">
+                                    @php
+                                        $paidRequests = $documentTypeStats->sum('revenue') > 0 ? $documentTypeStats->where('revenue', '>', 0)->sum('total_requests') : 0;
+                                    @endphp
+                                    From {{ $paidRequests }} paid requests
+                                </span>
                             </div>
                         </div>
                     </div>
@@ -102,12 +151,22 @@
                             <div class="d-flex justify-content-between align-items-center">
                                 <div>
                                     <h6 class="text-muted mb-1">New Residents</h6>
-                                    <h2 class="fw-bold text-info mb-0">15</h2>
+                                    <h2 class="fw-bold text-info mb-0">{{ $newResidents }}</h2>
+                                    @if(isset($previousPeriodData['newResidents']))
+                                        @php
+                                            $previousResidents = $previousPeriodData['newResidents'];
+                                            $trend = $previousResidents > 0 ? (($newResidents - $previousResidents) / $previousResidents) * 100 : 0;
+                                        @endphp
+                                        <small class="{{ $trend >= 0 ? 'trend-up' : 'trend-down' }}">
+                                            <i class="bi bi-arrow-{{ $trend >= 0 ? 'up' : 'down' }}-circle"></i>
+                                            {{ abs(round($trend, 1)) }}% from previous period
+                                        </small>
+                                    @endif
                                 </div>
                                 <i class="bi bi-person-plus text-info fs-4"></i>
                             </div>
                             <div class="mt-2">
-                                <span class="badge bg-success">+5 this month</span>
+                                <span class="badge bg-success">Registered since {{ $startDate->format('M j') }}</span>
                             </div>
                         </div>
                     </div>
@@ -161,12 +220,34 @@
                                 </tr>
                             </thead>
                             <tbody>
-                                <tr><th>Barangay Clearance</th><td>68</td><td>52</td><td>8</td><td>8</td><td>₱3,400</td></tr>
-                                <tr><th>Certificate of Indigency</th><td>45</td><td>38</td><td>4</td><td>3</td><td>₱0</td></tr>
-                                <tr><th>Business Permit</th><td>32</td><td>24</td><td>5</td><td>3</td><td>₱3,200</td></tr>
-                                <tr><th>Barangay ID</th><td>28</td><td>22</td><td>4</td><td>2</td><td>₱650</td></tr>
-                                <tr><th>Certificate of Residency</th><td>12</td><td>6</td><td>3</td><td>3</td><td>₱0</td></tr>
+                                @foreach($documentTypeStats as $stat)
+                                <tr>
+                                    <th>{{ $stat->request_type ?? $stat->document_type ?? 'N/A' }}</th>
+                                    <td>{{ $stat->total_requests }}</td>
+                                    <td>{{ $stat->completed }}</td>
+                                    <td>{{ $stat->processing ?? $stat->in_progress ?? 0 }}</td>
+                                    <td>{{ $stat->pending }}</td>
+                                    <td>₱{{ number_format($stat->revenue ?? 0, 2) }}</td>
+                                </tr>
+                                @endforeach
+                                @if($documentTypeStats->isEmpty())
+                                <tr>
+                                    <td colspan="6" class="text-center text-muted py-4">
+                                        No data available for the selected time period
+                                    </td>
+                                </tr>
+                                @endif
                             </tbody>
+                            <tfoot class="table-light">
+                                <tr>
+                                    <th>Total</th>
+                                    <th>{{ $documentTypeStats->sum('total_requests') }}</th>
+                                    <th>{{ $documentTypeStats->sum('completed') }}</th>
+                                    <th>{{ $documentTypeStats->sum('processing') ?? $documentTypeStats->sum('in_progress') ?? 0 }}</th>
+                                    <th>{{ $documentTypeStats->sum('pending') }}</th>
+                                    <th>₱{{ number_format($documentTypeStats->sum('revenue'), 2) }}</th>
+                                </tr>
+                            </tfoot>
                         </table>
                     </div>
                 </div>
@@ -183,29 +264,108 @@
                 if(link.href.includes('reports')) link.classList.add('active');
             });
 
+            // Requests Chart - Dynamic Data
             const requestsCtx = document.getElementById('requestsChart').getContext('2d');
-            new Chart(requestsCtx, {
+            const requestsChart = new Chart(requestsCtx, {
                 type: 'line',
                 data: {
-                    labels: ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep'],
+                    labels: @json($requestsOverTime->pluck('label')),
                     datasets: [
-                        { label: 'Total Requests', data: [120,135,140,152,148,160,172,165,185], borderColor:'#0d6efd', tension:0.1 },
-                        { label: 'Completed Requests', data: [95,105,110,120,115,125,140,130,142], borderColor:'#198754', tension:0.1 }
+                        { 
+                            label: 'Total Requests', 
+                            data: @json($requestsOverTime->pluck('total')), 
+                            borderColor: '#0d6efd', 
+                            backgroundColor: 'rgba(13, 110, 253, 0.1)',
+                            tension: 0.4,
+                            fill: true,
+                            borderWidth: 3
+                        },
+                        { 
+                            label: 'Completed Requests', 
+                            data: @json($requestsOverTime->pluck('completed')), 
+                            borderColor: '#198754', 
+                            backgroundColor: 'rgba(25, 135, 84, 0.1)',
+                            tension: 0.4,
+                            fill: true,
+                            borderWidth: 3
+                        }
                     ]
                 },
-                options: { responsive: true, maintainAspectRatio: false }
+                options: { 
+                    responsive: true, 
+                    maintainAspectRatio: false,
+                    plugins: {
+                        title: {
+                            display: true,
+                            text: 'Request Trends Over Time',
+                            font: { size: 16 }
+                        },
+                        legend: {
+                            position: 'top',
+                        }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            title: {
+                                display: true,
+                                text: 'Number of Requests'
+                            }
+                        },
+                        x: {
+                            title: {
+                                display: true,
+                                text: 'Time Period'
+                            }
+                        }
+                    }
+                }
             });
 
+            // Document Type Chart - Dynamic Data
             const documentTypeCtx = document.getElementById('documentTypeChart').getContext('2d');
-            new Chart(documentTypeCtx, {
+            const documentTypeChart = new Chart(documentTypeCtx, {
                 type: 'doughnut',
                 data: {
-                    labels: ['Barangay Clearance','Certificate of Indigency','Business Permit','Barangay ID','Certificate of Residency'],
-                    datasets: [{ data: [68,45,32,28,12], backgroundColor: ['#0d6efd','#6f42c1','#d63384','#fd7e14','#20c997'] }]
+                    labels: @json($documentTypeStats->pluck('request_type')->map(function($type) {
+                        return $type ?? 'Unknown';
+                    })),
+                    datasets: [{
+                        data: @json($documentTypeStats->pluck('total_requests')),
+                        backgroundColor: [
+                            '#0d6efd', '#6f42c1', '#d63384', '#fd7e14', '#20c997', 
+                            '#ffc107', '#dc3545', '#6610f2', '#e83e8c', '#6c757d'
+                        ],
+                        borderWidth: 2,
+                        borderColor: '#fff'
+                    }]
                 },
-                options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'bottom' } } }
+                options: { 
+                    responsive: true, 
+                    maintainAspectRatio: false, 
+                    plugins: { 
+                        legend: { 
+                            position: 'bottom',
+                            labels: {
+                                padding: 20,
+                                usePointStyle: true
+                            }
+                        },
+                        title: {
+                            display: true,
+                            text: 'Requests by Document Type',
+                            font: { size: 16 }
+                        }
+                    },
+                    cutout: '50%'
+                }
             });
         });
+
+        function exportReport() {
+            const timeRange = '{{ $timeRange }}';
+            window.open(`/admin/reports/export?time_range=${timeRange}`, '_blank');
+        }
     </script>
     @endpush
 </x-admin-layout>

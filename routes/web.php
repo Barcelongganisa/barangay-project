@@ -6,6 +6,7 @@ use App\Http\Controllers\ResidentController;
 use App\Http\Controllers\Admin\DashboardController;
 use App\Http\Controllers\Admin\ManageRequestsController;
 use App\Http\Controllers\Admin\ManageResidentsController;
+use App\Http\Controllers\Admin\ReportsController;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\Auth;
 
@@ -70,14 +71,10 @@ Route::middleware(['auth'])->prefix('admin')->group(function () {
     Route::get('/residents/{id}/details', [ManageResidentsController::class, 'getResidentDetails'])->name('admin.residents.details');
     Route::get('/residents/{id}/history', [ManageResidentsController::class, 'getResidentHistory'])->name('admin.residents.history');
     Route::delete('/residents/{id}', [ManageResidentsController::class, 'removeResident'])->name('admin.residents.remove');
-    
-    // Reports route (keep as view for now)
-    Route::get('/reports', function () {
-        if (Auth::user()->role !== 'admin') {
-            return redirect()->route('dashboard');
-        }
-        return view('admin.reports');
-    })->name('admin.reports');
+        
+    // Replace the static reports route with:
+    Route::get('/reports', [ReportsController::class, 'index'])->name('admin.reports');
+    Route::post('/reports/export', [ReportsController::class, 'export'])->name('admin.reports.export');
 });
 
 // Default Laravel Breeze profile routes

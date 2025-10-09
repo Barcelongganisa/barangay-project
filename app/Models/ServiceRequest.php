@@ -44,6 +44,6 @@ class ServiceRequest extends Model
 
         public function payment()
     {
-        return $this->hasOne(Payment::class, 'request_id');
+        return $this->hasOne(Payments::class, 'request_id');
     }
 }
