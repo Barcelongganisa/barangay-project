@@ -11,9 +11,12 @@ class BarangayResident extends Model
 
     protected $table = 'barangay_residents';
     protected $primaryKey = 'resident_id';
-    public $timestamps = false; // because your table uses date columns, not timestamp()
+    public $timestamps = true; 
+    public $incrementing = true;
+    protected $keyType = 'int';
 
     protected $fillable = [
+        'resident_id',
         'barangay_name',
         'household_no',
         'first_name',

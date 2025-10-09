@@ -11,10 +11,11 @@ class ServiceRequest extends Model
 
     protected $table = 'service_requests';
     protected $primaryKey = 'request_id';
-    public $timestamps = false; // since you’re using manual date fields (request_date, updated_at)
+    public $timestamps = false;
 
     protected $fillable = [
         'resident_id',
+        'user_id',
         'request_type',
         'request_date',
         'status',
@@ -25,7 +26,6 @@ class ServiceRequest extends Model
     /**
      * Relationships
      */
-
     public function resident()
     {
         return $this->belongsTo(BarangayResident::class, 'resident_id', 'resident_id');
@@ -36,8 +36,14 @@ class ServiceRequest extends Model
         return $this->hasMany(RequiredDocument::class, 'request_id', 'request_id');
     }
 
+    // Add this alias for compatibility
     public function documents()
     {
-        return $this->hasMany(Document::class, 'request_id', 'request_id');
+        return $this->hasMany(RequiredDocument::class, 'request_id', 'request_id');
+    }
+
+        public function payment()
+    {
+        return $this->hasOne(Payment::class, 'request_id');
     }
 }

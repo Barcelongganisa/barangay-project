@@ -1,7 +1,7 @@
 <x-resident-layout>
     @php
         // Get the current resident's ID
-        $residentId = auth()->user()->resident_id ?? 1;
+        $residentId = auth()->id() ;
         
         // Get requests for this resident
         $requests = DB::table('service_requests')
@@ -19,7 +19,7 @@
         
         // Map statuses to display names
         $statusDisplay = [
-            'pending' => 'Under Review',
+            'pending' => 'Pending',
             'processing' => 'Processing',
             'completed' => 'Complete',
             'declined' => 'Declined'

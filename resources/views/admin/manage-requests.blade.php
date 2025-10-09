@@ -16,11 +16,13 @@
             font-weight: 700;
             border-radius: 0.375rem;
         }
+        .status-pending { background-color: #fff3cd; color: #856404; }
         .status-under-review { background-color: #e2e3e5; color: #495057; }
         .status-waiting-payment { background-color: #fff3cd; color: #856404; }
-        .status-declined { background-color: #f8d7da; color: #721c24; }
         .status-processing { background-color: #cce5ff; color: #004085; }
-        .status-complete { background-color: #d4edda; color: #155724; }
+        .status-completed { background-color: #d4edda; color: #155724; }
+        .status-declined { background-color: #f8d7da; color: #721c24; }
+        
         .btn-custom-size {
             width: 130px;
             white-space: nowrap;
@@ -28,8 +30,7 @@
     </style>
 
     <div class="main-content" id="mainContent">
-        <div class="container-fluid p-4" style="    position: relative;
-    left: -120px;">
+        <div class="container-fluid p-4" style="position: relative; left: -120px;">
             {{-- Filter Card --}}
             <div class="card shadow-sm mb-4">
                 <div class="card-body">
@@ -37,22 +38,24 @@
                         <div class="col-md-3">
                             <label for="filterStatus" class="form-label">Filter by Status</label>
                             <select class="form-select" id="filterStatus">
-                                <option selected>All</option>
+                                <option value="all" selected>All</option>
+                                <option value="pending">Pending</option>
                                 <option value="under-review">Under Review</option>
                                 <option value="waiting-payment">Waiting for Payment</option>
                                 <option value="processing">Processing</option>
-                                <option value="complete">Complete</option>
+                                <option value="completed">Completed</option>
                                 <option value="declined">Declined</option>
                             </select>
                         </div>
                         <div class="col-md-3">
                             <label for="filterType" class="form-label">Filter by Document Type</label>
                             <select class="form-select" id="filterType">
-                                <option selected>All</option>
-                                <option value="residency">Barangay Residency</option>
-                                <option value="indigency">Certificate of Indigency</option>
-                                <option value="business">Business Clearance</option>
-                                <option value="id">Barangay ID</option>
+                                <option value="all" selected>All</option>
+                                <option value="Barangay Clearance">Barangay Clearance</option>
+                                <option value="Barangay Certificate of Residency">Barangay Residency</option>
+                                <option value="Barangay Certificate of Indigency">Certificate of Indigency</option>
+                                <option value="Barangay Business Clearance">Business Clearance</option>
+                                <option value="Barangay ID">Barangay ID</option>
                                 <option value="other">Other</option>
                             </select>
                         </div>
@@ -61,8 +64,8 @@
                             <input type="text" class="form-control" id="searchBar" placeholder="Search by name or request #...">
                         </div>
                         <div class="col-md-3 d-flex align-items-end">
-                            <button class="btn btn-primary w-100 me-2 btn-custom-size">Apply Filters</button>
-                            <button class="btn btn-outline-secondary w-100 btn-custom-size">Reset</button>
+                            <button class="btn btn-primary w-100 me-2 btn-custom-size" id="applyFilters">Apply Filters</button>
+                            <button class="btn btn-outline-secondary w-100 btn-custom-size" id="resetFilters">Reset</button>
                         </div>
                     </div>
                 </div>
@@ -72,7 +75,7 @@
             <div class="card shadow-sm mb-4">
                 <div class="card-body">
                     <div class="table-responsive">
-                        <table class="table table-hover align-middle">
+                        <table class="table table-hover align-middle" id="requestsTable">
                             <thead class="table-light">
                                 <tr>
                                     <th>Request #</th>
@@ -83,57 +86,55 @@
                                     <th>Actions</th>
                                 </tr>
                             </thead>
-                            <tbody>
-                                <tr data-request-id="REQ-001" data-status="under-review">
-                                    <th scope="row">REQ-001</th>
-                                    <td>Juan Dela Cruz</td>
-                                    <td>Barangay Residency</td>
-                                    <td>Sep 20, 2025</td>
-                                    <td><span class="request-status status-under-review">Under Review</span></td>
-                                    <td>
-                                        <button class="btn btn-sm btn-primary btn-custom-size process-action-btn" data-bs-toggle="modal" data-bs-target="#processModal" data-action-type="review">Process</button>
-                                    </td>
-                                </tr>
-                                <tr data-request-id="REQ-002" data-status="waiting-payment">
-                                    <th scope="row">REQ-002</th>
-                                    <td>Maria Santos</td>
-                                    <td>Certificate of Indigency</td>
-                                    <td>Sep 19, 2025</td>
-                                    <td><span class="request-status status-waiting-payment">Waiting for Payment</span></td>
-                                    <td>
-                                        <button class="btn btn-sm btn-success btn-custom-size process-action-btn" data-bs-toggle="modal" data-bs-target="#processModal" data-action-type="confirm-payment">Confirm Payment</button>
-                                    </td>
-                                </tr>
-                                <tr data-request-id="REQ-003" data-status="declined">
-                                    <th scope="row">REQ-003</th>
-                                    <td>Jose Rizal</td>
-                                    <td>Business Clearance</td>
-                                    <td>Sep 18, 2025</td>
-                                    <td><span class="request-status status-declined">Declined</span></td>
-                                    <td>
-                                        <button class="btn btn-sm btn-outline-secondary btn-custom-size view-details-btn" data-bs-toggle="modal" data-bs-target="#detailsModal">View</button>
-                                    </td>
-                                </tr>
-                                <tr data-request-id="REQ-004" data-status="processing">
-                                    <th scope="row">REQ-004</th>
-                                    <td>Teresita Reyes</td>
-                                    <td>Barangay ID</td>
-                                    <td>Sep 17, 2025</td>
-                                    <td><span class="request-status status-processing">Processing</span></td>
-                                    <td>
-                                        <button class="btn btn-sm btn-primary btn-custom-size process-action-btn" data-bs-toggle="modal" data-bs-target="#processModal" data-action-type="processing">Process</button>
-                                    </td>
-                                </tr>
-                                <tr data-request-id="REQ-005" data-status="complete">
-                                    <th scope="row">REQ-005</th>
-                                    <td>John Doe</td>
-                                    <td>Certificate of Indigency</td>
-                                    <td>Sep 16, 2025</td>
-                                    <td><span class="request-status status-complete">Complete</span></td>
-                                    <td>
-                                        <button class="btn btn-sm btn-outline-secondary btn-custom-size view-details-btn" data-bs-toggle="modal" data-bs-target="#detailsModal">View</button>
-                                    </td>
-                                </tr>
+                            <tbody id="requestsTableBody">
+                                @forelse($requests as $request)
+                                    <tr data-request-id="{{ $request->request_id }}" data-status="{{ $request->status }}">
+                                        <th scope="row">REQ-{{ str_pad($request->request_id, 3, '0', STR_PAD_LEFT) }}</th>
+                                        <td>{{ $request->resident->first_name }} {{ $request->resident->last_name }}</td>
+                                        <td>{{ $request->request_type }}</td>
+                                        <td>
+                                            @php
+                                                $requestDate = \Carbon\Carbon::parse($request->request_date);
+                                                echo $requestDate->format('M j, Y, g:i A');
+                                            @endphp
+                                        </td>
+                                        <td>
+                                            @php
+                                                $statusClass = 'status-' . str_replace(' ', '-', $request->status);
+                                                $statusDisplay = ucfirst(str_replace('-', ' ', $request->status));
+                                            @endphp
+                                            <span class="request-status {{ $statusClass }}">{{ $statusDisplay }}</span>
+                                        </td>
+                                        <td>
+                                            @if(in_array($request->status, ['pending', 'under-review', 'waiting-payment', 'processing']))
+                                                <button class="btn btn-sm btn-primary btn-custom-size process-action-btn" 
+                                                        data-bs-toggle="modal" 
+                                                        data-bs-target="#processModal" 
+                                                        data-action-type="{{ $request->status }}"
+                                                        data-request-id="{{ $request->request_id }}">
+                                                    @if($request->status == 'waiting-payment')
+                                                        Confirm Payment
+                                                    @else
+                                                        Process
+                                                    @endif
+                                                </button>
+                                            @else
+                                                <button class="btn btn-sm btn-outline-secondary btn-custom-size view-details-btn" 
+                                                        data-bs-toggle="modal" 
+                                                        data-bs-target="#detailsModal"
+                                                        data-request-id="{{ $request->request_id }}">
+                                                    View
+                                                </button>
+                                            @endif
+                                        </td>
+                                    </tr>
+                                @empty
+                                    <tr>
+                                        <td colspan="6" class="text-center py-4">
+                                            <div class="text-muted">No requests found.</div>
+                                        </td>
+                                    </tr>
+                                @endforelse
                             </tbody>
                         </table>
                     </div>
@@ -179,58 +180,171 @@
                     <p><strong>Document Type:</strong> <span id="process-modal-document-type"></span></p>
                     <hr>
                     <h6>Uploaded Documents</h6>
-                    <div class="alert alert-info">
-                        <i class="bi bi-file-earmark-text me-2"></i>
-                        Uploaded Documents (Barangay Clearance, etc.)
-                        <a href="#" class="btn btn-sm btn-primary float-end">View</a>
-                    </div>
+                    <div id="process-modal-documents-list"></div>
                     <hr>
                     <div id="process-modal-dynamic-content"></div>
                 </div>
                 <div class="modal-footer">
-                    <button class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
                     <div id="process-modal-action-buttons"></div>
                 </div>
             </div>
         </div>
     </div>
 
-    @push('scripts')
-        <script>
-            document.addEventListener('DOMContentLoaded', function () {
-                // Highlight sidebar link
-                document.querySelectorAll('.nav-link').forEach(link => {
-                    if (link.href.includes('manage_requests')) {
-                        link.classList.add('active');
+    {{-- INLINE JAVASCRIPT --}}
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            console.log('Manage Requests Page Loaded');
+
+            // Store original table content for reset
+            const originalTableContent = document.getElementById('requestsTableBody').innerHTML;
+
+            // Filter functionality - ONLY when Apply Filters is clicked
+            document.getElementById('applyFilters').addEventListener('click', applyFilters);
+            document.getElementById('resetFilters').addEventListener('click', resetFilters);
+            
+            function applyFilters() {
+                const statusFilter = document.getElementById('filterStatus').value;
+                const typeFilter = document.getElementById('filterType').value;
+                const searchTerm = document.getElementById('searchBar').value.toLowerCase();
+                
+                console.log('Applying filters:', { statusFilter, typeFilter, searchTerm });
+                
+                let hasVisibleRows = false;
+                
+                // Reset table to original state first
+                document.getElementById('requestsTableBody').innerHTML = originalTableContent;
+                
+                // Now apply filters to all rows
+                document.querySelectorAll('#requestsTableBody tr').forEach(row => {
+                    if (row.cells.length < 5) {
+                        // This is the "no results" row, hide it initially
+                        row.style.display = 'none';
+                        return;
+                    }
+                    
+                    const status = row.dataset.status;
+                    const documentType = row.cells[2].textContent;
+                    const rowText = row.textContent.toLowerCase();
+                    
+                    const statusMatch = statusFilter === 'all' || status === statusFilter;
+                    const typeMatch = typeFilter === 'all' || documentType.includes(typeFilter);
+                    const searchMatch = searchTerm === '' || rowText.includes(searchTerm);
+                    
+                    if (statusMatch && typeMatch && searchMatch) {
+                        row.style.display = '';
+                        hasVisibleRows = true;
+                    } else {
+                        row.style.display = 'none';
                     }
                 });
 
+                // Show message if no rows match filters
+                const tbody = document.getElementById('requestsTableBody');
+                if (!hasVisibleRows) {
+                    // Check if we already have a no-results row
+                    let noResultsRow = tbody.querySelector('.no-results');
+                    if (!noResultsRow) {
+                        noResultsRow = document.createElement('tr');
+                        noResultsRow.className = 'no-results';
+                        noResultsRow.innerHTML = '<td colspan="6" class="text-center py-4"><div class="text-muted">No requests match your filters.</div></td>';
+                        tbody.appendChild(noResultsRow);
+                    } else {
+                        noResultsRow.style.display = '';
+                    }
+                } else {
+                    // Remove no-results row if it exists
+                    const noResultsRow = tbody.querySelector('.no-results');
+                    if (noResultsRow) {
+                        noResultsRow.remove();
+                    }
+                }
+
+                // Re-attach event listeners to buttons since we reset the table
+                attachEventListeners();
+            }
+
+            function resetFilters() {
+                document.getElementById('filterStatus').value = 'all';
+                document.getElementById('filterType').value = 'all';
+                document.getElementById('searchBar').value = '';
+                
+                // Reset table to original state
+                document.getElementById('requestsTableBody').innerHTML = originalTableContent;
+                
+                // Re-attach event listeners
+                attachEventListeners();
+            }
+
+            function attachEventListeners() {
                 // View Details Modal
                 document.querySelectorAll('.view-details-btn').forEach(button => {
                     button.addEventListener('click', function () {
+                        const requestId = this.dataset.requestId;
+                        console.log('View details for:', requestId);
+                        
+                        // Get basic info from table row
                         const row = this.closest('tr');
-                        const requestId = row.dataset.requestId;
-                        const status = row.dataset.status;
-
-                        document.getElementById('modal-request-id').textContent = requestId;
-                        document.getElementById('modal-resident-name').textContent = row.cells[1].textContent;
-                        document.getElementById('modal-document-type').textContent = row.cells[2].textContent;
-                        document.getElementById('modal-date-submitted').textContent = row.cells[3].textContent;
-                        document.getElementById('modal-status').textContent = row.cells[4].textContent;
-
+                        const residentName = row.cells[1].textContent;
+                        const documentType = row.cells[2].textContent;
+                        const dateSubmitted = row.cells[3].textContent;
+                        const status = row.querySelector('.request-status').textContent;
+                        
+                        // Populate modal
+                        document.getElementById('modal-request-id').textContent = 'REQ-' + String(requestId).padStart(3, '0');
+                        document.getElementById('modal-resident-name').textContent = residentName;
+                        document.getElementById('modal-document-type').textContent = documentType;
+                        document.getElementById('modal-date-submitted').textContent = dateSubmitted;
+                        document.getElementById('modal-status').textContent = status;
+                        
+                        // Add dynamic content based on status
                         const dynamicContent = document.getElementById('modal-dynamic-content');
-                        dynamicContent.innerHTML = '';
-
-                        if (status === 'under-review') {
-                            dynamicContent.innerHTML = `<div class="alert alert-warning">Not yet reviewed.</div>`;
-                        } else if (status === 'waiting-payment') {
-                            dynamicContent.innerHTML = `<div class="alert alert-secondary">The request has been approved. The resident has been notified to proceed with payment.<p class="mb-0 mt-2"><strong>Fee:</strong> ₱50.00</p></div>`;
-                        } else if (status === 'processing') {
-                            dynamicContent.innerHTML = `<div class="alert alert-info">The request is currently being processed.</div>`;
-                        } else if (status === 'declined') {
-                            dynamicContent.innerHTML = `<div class="alert alert-danger">This request has been declined.<p class="mb-0 mt-2"><strong>Reason:</strong> Invalid uploaded document.</p></div>`;
-                        } else if (status === 'complete') {
-                            dynamicContent.innerHTML = `<div class="alert alert-success">This request has been completed.<p class="mb-0 mt-2"><strong>Comment:</strong> Document ready for pickup.</p></div>`;
+                        const statusLower = status.toLowerCase();
+                        
+                        if (statusLower.includes('pending') || statusLower.includes('review')) {
+                            dynamicContent.innerHTML = `
+                                <h6>Admin Comment</h6>
+                                <div class="alert alert-warning">
+                                    This request is awaiting review by an administrator.
+                                </div>`;
+                        } else if (statusLower.includes('waiting')) {
+                            dynamicContent.innerHTML = `
+                                <h6>Admin Comment</h6>
+                                <div class="alert alert-secondary">
+                                    The request has been approved. Waiting for resident to complete payment.
+                                    <p class="mb-0 mt-2"><strong>Fee:</strong> ₱50.00</p>
+                                </div>`;
+                        } else if (statusLower.includes('processing')) {
+                            dynamicContent.innerHTML = `
+                                <h6>Admin Comment</h6>
+                                <div class="alert alert-info">
+                                    The request is currently being processed.
+                                </div>`;
+                        } else if (statusLower.includes('declined')) {
+                            dynamicContent.innerHTML = `
+                                <h6>Admin Comment</h6>
+                                <div class="alert alert-danger">
+                                    This request has been declined.
+                                    <p class="mb-0 mt-2"><strong>Reason:</strong> Please check the uploaded documents.</p>
+                                </div>`;
+                        } else if (statusLower.includes('complete')) {
+                            dynamicContent.innerHTML = `
+                                <h6>Admin Comment</h6>
+                                <div class="alert alert-success">
+                                    This request has been completed.
+                                    <p class="mb-0 mt-2"><strong>Comment:</strong> Document ready for pickup.</p>
+                                </div>
+                                <hr>
+                                <h6>Generated Document</h6>
+                                <div class="alert alert-success d-flex align-items-center">
+                                    <i class="bi bi-file-earmark-check-fill me-2 fs-4"></i>
+                                    <div>
+                                        <p class="mb-0"><strong>Completed_Document.pdf</strong></p>
+                                        <p class="mb-0 text-muted">Ready for pickup at barangay hall.</p>
+                                    </div>
+                                    <a href="#" class="btn btn-sm btn-outline-success ms-auto">Download</a>
+                                </div>`;
                         }
                     });
                 });
@@ -238,52 +352,152 @@
                 // Process Modal
                 document.querySelectorAll('.process-action-btn').forEach(button => {
                     button.addEventListener('click', function () {
-                        const row = this.closest('tr');
-                        const requestId = row.dataset.requestId;
+                        const requestId = this.dataset.requestId;
                         const actionType = this.dataset.actionType;
-
-                        document.getElementById('process-modal-request-id').textContent = requestId;
-                        document.getElementById('process-modal-resident-name').textContent = row.cells[1].textContent;
-                        document.getElementById('process-modal-document-type').textContent = row.cells[2].textContent;
-
+                        console.log('Process request:', requestId, 'Action:', actionType);
+                        
+                        // Get basic info from table row
+                        const row = this.closest('tr');
+                        const residentName = row.cells[1].textContent;
+                        const documentType = row.cells[2].textContent;
+                        
+                        // Populate basic info
+                        document.getElementById('process-modal-request-id').textContent = 'REQ-' + String(requestId).padStart(3, '0');
+                        document.getElementById('process-modal-resident-name').textContent = residentName;
+                        document.getElementById('process-modal-document-type').textContent = documentType;
+                        
+                        // Show loading for documents
+                        const documentsList = document.getElementById('process-modal-documents-list');
+                        documentsList.innerHTML = '<div class="alert alert-info">Loading documents...</div>';
+                        
+                        // Load dynamic content based on action type
                         const dynamicContent = document.getElementById('process-modal-dynamic-content');
                         const actionButtons = document.getElementById('process-modal-action-buttons');
-                        dynamicContent.innerHTML = '';
-                        actionButtons.innerHTML = '';
-
-                        if (actionType === 'review') {
+                        
+                        if (actionType === 'pending' || actionType === 'under-review') {
                             dynamicContent.innerHTML = `
+                                <h6>Admin Action</h6>
                                 <div class="mb-3">
                                     <label class="form-label">Admin Comment</label>
-                                    <textarea class="form-control" rows="3" placeholder="Add a comment..."></textarea>
+                                    <textarea class="form-control" id="adminComment" rows="3" placeholder="Add a comment..."></textarea>
                                 </div>
                                 <div class="mb-3">
                                     <label class="form-label">Processing Fee</label>
-                                    <input type="number" class="form-control" placeholder="e.g., 50">
+                                    <input type="number" class="form-control" id="processingFee" placeholder="e.g., 50" value="50">
                                     <div class="form-text">Enter the fee for this document.</div>
                                 </div>`;
                             actionButtons.innerHTML = `
-                                <button class="btn btn-danger btn-custom-size">Decline</button>
-                                <button class="btn btn-success btn-custom-size">Approve</button>`;
-                        } else if (actionType === 'confirm-payment') {
-                            dynamicContent.innerHTML = `<p class="text-center">Confirm payment for this request?</p>`;
-                            actionButtons.innerHTML = `<button class="btn btn-primary btn-custom-size">Yes, Confirm</button>`;
+                                <button type="button" class="btn btn-danger btn-custom-size" onclick="updateRequestStatus(${requestId}, 'declined')">Decline</button>
+                                <button type="button" class="btn btn-success btn-custom-size" onclick="updateRequestStatus(${requestId}, 'waiting-payment')">Approve</button>`;
+                        } else if (actionType === 'waiting-payment') {
+                            dynamicContent.innerHTML = `
+                                <p class="text-center">Are you sure you want to confirm payment for this request?</p>`;
+                            actionButtons.innerHTML = `
+                                <button type="button" class="btn btn-primary btn-custom-size" onclick="updateRequestStatus(${requestId}, 'processing')">Yes, Confirm</button>`;
                         } else if (actionType === 'processing') {
                             dynamicContent.innerHTML = `
-                                <div class="mb-3">
-                                    <label class="form-label">Upload Document</label>
-                                    <input class="form-control" type="file">
-                                    <div class="form-text">Accepted: PDF, Max: 5MB</div>
-                                </div>
+                                <h6>Complete Processing</h6>
                                 <div class="mb-3">
                                     <label class="form-label">Comment for Resident</label>
-                                    <textarea class="form-control" rows="3" placeholder="e.g., Document ready for pickup."></textarea>
+                                    <textarea class="form-control" id="processComment" rows="3" placeholder="e.g., Document ready for pickup..."></textarea>
                                 </div>`;
-                            actionButtons.innerHTML = `<button class="btn btn-success btn-custom-size">Mark as Complete</button>`;
+                            actionButtons.innerHTML = `
+                                <button type="button" class="btn btn-success btn-custom-size" onclick="updateRequestStatus(${requestId}, 'completed')">Mark as Complete</button>`;
                         }
+                        
+                        // Load actual documents from API
+                        loadRequestDocuments(requestId);
                     });
                 });
+            }
+
+// Function to load documents from API
+async function loadRequestDocuments(requestId) {
+    try {
+        console.log('Loading documents for request:', requestId);
+        const response = await fetch('/admin/requests/' + requestId + '/details');
+        
+        if (!response.ok) {
+            throw new Error('Failed to load documents');
+        }
+        
+        const data = await response.json();
+        console.log('Documents data:', data);
+        
+        const documentsList = document.getElementById('process-modal-documents-list');
+        documentsList.innerHTML = '';
+        
+        // Check if we have documents in the response
+        if (data.success && data.documents && data.documents.length > 0) {
+            console.log('Found documents:', data.documents);
+            data.documents.forEach(doc => {
+                const docElement = document.createElement('div');
+                docElement.className = 'alert alert-info d-flex justify-content-between align-items-center mb-2';
+                docElement.innerHTML = `
+                    <div>
+                        <i class="bi bi-file-earmark-text me-2"></i>
+                        ${doc.document_type}
+                    </div>
+                    <a href="/storage/${doc.file_path}" target="_blank" class="btn btn-sm btn-primary">View</a>
+                `;
+                documentsList.appendChild(docElement);
             });
-        </script>
-    @endpush
+        } else {
+            console.log('No documents found in response');
+            documentsList.innerHTML = '<div class="alert alert-warning">No documents uploaded for this request.</div>';
+        }
+    } catch (error) {
+        console.error('Error loading documents:', error);
+        const documentsList = document.getElementById('process-modal-documents-list');
+        documentsList.innerHTML = '<div class="alert alert-danger">Error loading documents: ' + error.message + '</div>';
+    }
+}
+
+            // Global function to update request status
+            window.updateRequestStatus = async function(requestId, newStatus) {
+                try {
+                    console.log('Updating status for request:', requestId, 'to:', newStatus);
+                    
+                    let remarks = '';
+                    if (newStatus === 'declined') {
+                        remarks = document.getElementById('adminComment')?.value || 'Request declined.';
+                    } else if (newStatus === 'waiting-payment') {
+                        const fee = document.getElementById('processingFee')?.value || '50';
+                        remarks = `Approved. Processing fee: ₱${fee}. Waiting for payment.`;
+                    } else if (newStatus === 'completed') {
+                        remarks = document.getElementById('processComment')?.value || 'Document completed and ready for pickup.';
+                    }
+                    
+                    const response = await fetch('/admin/requests/' + requestId + '/status', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'X-CSRF-TOKEN': '{{ csrf_token() }}'
+                        },
+                        body: JSON.stringify({
+                            status: newStatus,
+                            remarks: remarks
+                        })
+                    });
+                    
+                    const data = await response.json();
+                    
+                    if (data.success) {
+                        // Close the modal and reload the page
+                        const modal = bootstrap.Modal.getInstance(document.getElementById('processModal'));
+                        modal.hide();
+                        location.reload();
+                    } else {
+                        alert('Error: ' + (data.message || 'Failed to update status'));
+                    }
+                } catch (error) {
+                    console.error('Error updating status:', error);
+                    alert('Error updating status. Please try again.');
+                }
+            };
+
+            // Initial attachment of event listeners
+            attachEventListeners();
+        });
+    </script>
 </x-admin-layout>

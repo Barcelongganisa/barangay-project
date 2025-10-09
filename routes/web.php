@@ -3,6 +3,9 @@
 use App\Http\Controllers\ResidentProfileController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\ResidentController;
+use App\Http\Controllers\Admin\DashboardController;
+use App\Http\Controllers\Admin\ManageRequestsController;
+use App\Http\Controllers\Admin\ManageResidentsController;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\Auth;
 
@@ -41,9 +44,9 @@ Route::middleware(['auth'])->group(function () {
         Route::patch('/profile', [ResidentProfileController::class, 'update'])->name('resident-profile.update');
         Route::delete('/profile', [ResidentProfileController::class, 'destroy'])->name('resident-profile.destroy');
 
-        // Profile photo update route - FIXED: Make sure this is inside the prefix group
+        // Profile photo update route
         Route::patch('/profile/photo', [ResidentProfileController::class, 'updatePhoto'])
-            ->name('profile-photo.update'); // This will be 'resident.profile-photo.update'
+            ->name('profile-photo.update');
 
         // Create new request with documents
         Route::post('/requests/upload', [ResidentController::class, 'storeRequestWithDocuments'])
@@ -53,27 +56,21 @@ Route::middleware(['auth'])->group(function () {
 
 // Admin routes
 Route::middleware(['auth'])->prefix('admin')->group(function () {
-    Route::get('/dashboard', function () {
-        if (Auth::user()->role !== 'admin') {
-            return redirect()->route('dashboard');
-        }
-        return view('admin.dashboard');
-    })->name('admin.dashboard');
+    // Dashboard route
+    Route::get('/dashboard', [DashboardController::class, 'index'])->name('admin.dashboard');
     
-    Route::get('/manage-requests', function () {
-        if (Auth::user()->role !== 'admin') {
-            return redirect()->route('dashboard');
-        }
-        return view('admin.manage-requests');
-    })->name('admin.manage.requests');
+    // Manage Requests routes
+    Route::get('/manage-requests', [ManageRequestsController::class, 'index'])->name('admin.manage.requests');
+    Route::get('/requests/{id}/details', [ManageRequestsController::class, 'getRequestDetails'])->name('admin.requests.details');
+    Route::post('/requests/{id}/status', [ManageRequestsController::class, 'updateStatus'])->name('admin.requests.updateStatus');
     
-    Route::get('/manage-residents', function () {
-        if (Auth::user()->role !== 'admin') {
-            return redirect()->route('dashboard');
-        }
-        return view('admin.manage-residents');
-    })->name('admin.manage.residents');
+    // Manage Residents routes  
+    Route::get('/manage-residents', [ManageResidentsController::class, 'index'])->name('admin.manage.residents');
+    Route::get('/residents/{id}/details', [ManageResidentsController::class, 'getResidentDetails'])->name('admin.residents.details');
+    Route::get('/residents/{id}/history', [ManageResidentsController::class, 'getResidentHistory'])->name('admin.residents.history');
+    Route::delete('/residents/{id}', [ManageResidentsController::class, 'removeResident'])->name('admin.residents.remove');
     
+    // Reports route (keep as view for now)
     Route::get('/reports', function () {
         if (Auth::user()->role !== 'admin') {
             return redirect()->route('dashboard');

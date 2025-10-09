@@ -25,8 +25,9 @@
     </style>
 
     <div class="main-content" id="mainContent">
-        <div class="container-fluid p-4" style="    position: relative;
-    left: -120px;">
+        <div class="container-fluid p-4" style="position: relative; left: -120px;">
+            
+            <!-- Export & Filter -->
             <div class="d-flex justify-content-end ms-auto mb-3">
                 <button class="btn btn-primary me-2">
                     <i class="bi bi-download me-1"></i> Export Report
@@ -141,7 +142,7 @@
                 </div>
             </div>
 
-            <!-- Table -->
+            <!-- Detailed Reports Table -->
             <div class="card border-0 shadow mb-4">
                 <div class="card-header bg-white">
                     <h5 class="card-title mb-0">Request Statistics by Type</h5>
@@ -170,6 +171,7 @@
                     </div>
                 </div>
             </div>
+
         </div>
     </div>
 

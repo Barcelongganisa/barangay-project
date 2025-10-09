@@ -1,7 +1,7 @@
 <x-resident-layout>
     @php
         // Get the current resident's ID
-        $residentId = auth()->user()->resident_id ?? 1;
+        $residentId = auth()->id();
         
         // Get completed requests (documents) for this resident
         $documents = DB::table('service_requests')

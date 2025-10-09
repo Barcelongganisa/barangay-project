@@ -46,21 +46,20 @@ class RegisteredUserController extends Controller
 
     // Create corresponding BarangayResident
     BarangayResident::create([
-        'first_name' => $request->name, // if you only have 'name', store it here
-        'last_name' => '', // you can separate later if you want
+        'resident_id' => $user->id, // crucial!
+        'first_name' => $request->name,
         'middle_name' => null,
+        'last_name' => '',
         'email' => $request->email,
-        'barangay_name' => 'Default Barangay', // change as needed
-        'household_no' => '',
-        'date_of_birth' => now(), // you may prompt user to update later
-        'gender' => 'Male', // default, can update later
+        'barangay_name' => 'Default Barangay',
         'contact_number' => '',
-        'address' => '',
+        'date_of_birth' => now(),
+        'gender' => 'Male',
         'civil_status' => 'Single',
         'occupation' => 'N/A',
-        'created_at' => now(),
-        'updated_at' => now(),
+        'address' => '',
     ]);
+
 
     event(new Registered($user));
 

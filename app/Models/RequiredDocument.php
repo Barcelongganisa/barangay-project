@@ -11,11 +11,14 @@ class RequiredDocument extends Model
 
     protected $table = 'required_documents';
     protected $primaryKey = 'document_id';
+    public $timestamps = true;
 
     protected $fillable = [
         'request_id',
         'document_type',
         'file_path',
+        'created_at',
+        'updated_at',
     ];
 
     public function serviceRequest()

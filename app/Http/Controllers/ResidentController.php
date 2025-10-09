@@ -7,6 +7,8 @@ use Illuminate\Support\Facades\DB;
 use Barryvdh\DomPDF\Facade\Pdf; 
 use App\Models\ServiceRequest;
 use App\Models\RequiredDocument;
+use App\Models\BarangayResident;
+use App\Models\User; 
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Auth;
 
@@ -31,39 +33,50 @@ class ResidentController extends Controller
 
         return back()->with('success', 'Document uploaded successfully!');
     }
-    public function storeRequestWithDocuments(Request $request)
-    {
-        try {
-            \Log::info('Received request data:', $request->all());
 
-            // Validate the request
-            $validated = $request->validate([
-                'service_type' => 'required|string',
-                'purpose' => 'required|string',
-                'documents' => 'required|array|min:1',
-                'documents.*.file' => 'required|file|mimes:pdf,jpg,jpeg,png|max:5120',
-                'documents.*.document_type' => 'required|string|max:100',
-            ]);
+public function storeRequestWithDocuments(Request $request)
+{
+    try {
+        \Log::info('Received request data:', $request->all());
 
-            // Service mapping
-            $serviceMapping = [
-                'clearance' => 'Barangay Clearance',
-                'residency' => 'Barangay Certificate of Residency', 
-                'indigency' => 'Barangay Certificate of Indigency',
-                'business' => 'Barangay Business Clearance',
-                'id' => 'Barangay ID',
-                'other' => 'Other Request',
-            ];
+        // Validate
+        $validated = $request->validate([
+            'service_type' => 'required|string',
+            'purpose' => 'required|string',
+            'documents' => 'required|array|min:1',
+            'documents.*.file' => 'required|file|mimes:pdf,jpg,jpeg,png|max:5120',
+            'documents.*.document_type' => 'required|string|max:100',
+        ]);
 
-            $requestType = $serviceMapping[$request->service_type] ?? null;
-            if (!$requestType) {
-                return response()->json(['error' => 'Invalid service selected.'], 422);
-            }
+        // Service mapping
+        $serviceMapping = [
+            'clearance' => 'Barangay Clearance',
+            'residency' => 'Barangay Certificate of Residency', 
+            'indigency' => 'Barangay Certificate of Indigency',
+            'business' => 'Barangay Business Clearance',
+            'id' => 'Barangay ID',
+            'other' => 'Other Request',
+        ];
 
-            // 🔹 TEMPORARY FIX: Use resident_id = 1 since that's the only one that exists
-            $residentId = 1;
+        $requestType = $serviceMapping[$request->service_type] ?? null;
+        if (!$requestType) {
+            return response()->json(['error' => 'Invalid service selected.'], 422);
+        }
 
-            // Create Service Request
+        // ✅ Get the logged-in resident
+        $user = auth()->user();
+        $resident = \App\Models\BarangayResident::where('email', $user->email)->first();
+        
+        if (!$resident) {
+            return response()->json(['error' => 'Resident profile not found.'], 422);
+        }
+
+        $residentId = $resident->resident_id;
+
+        // ✅ Use a transaction so both insertions succeed or fail together
+        DB::transaction(function () use ($request, $validated, $residentId, $requestType) {
+
+            // 1️⃣ Create the main service request
             $serviceRequest = ServiceRequest::create([
                 'resident_id' => $residentId,
                 'request_type' => $requestType,
@@ -73,40 +86,47 @@ class ResidentController extends Controller
                 'updated_at' => now(),
             ]);
 
-            \Log::info('Service request created with ID: ' . $serviceRequest->request_id);
+            \Log::info('Created request ID: ' . $serviceRequest->request_id);
 
-            // Save documents
-            foreach ($request->documents as $index => $documentData) {
-                if (isset($documentData['file']) && $documentData['file']->isValid()) {
-                    $file = $documentData['file'];
-                    $filePath = $file->store('required_documents', 'public');
+            // 2️⃣ Attach uploaded documents directly via relationship
+            foreach ($request->documents as $docData) {
+                if (!isset($docData['file']) || !$docData['file']->isValid()) continue;
 
-                    \DB::table('required_documents')->insert([
-                        'request_id' => $serviceRequest->request_id,
-                        'document_type' => $documentData['document_type'],
-                        'file_path' => $filePath,
-                        'created_at' => now(),
-                        'updated_at' => now(),
-                    ]);
-                }
+                $path = $docData['file']->store('required_documents', 'public');
+
+                $serviceRequest->requiredDocuments()->create([
+                    'document_type' => $docData['document_type'],
+                    'file_path' => $path,
+                    'created_at' => now(),
+                    'updated_at' => now(),
+                ]);
             }
+        });
 
-            return response()->json([
-                'success' => true,
-                'message' => 'Request submitted successfully!',
-                'request_id' => $serviceRequest->request_id,
-            ]);
+        return response()->json([
+            'success' => true,
+            'message' => 'Request submitted successfully!',
+        ]);
 
-        } catch (\Exception $e) {
-            \Log::error('Submission error: ' . $e->getMessage());
-            return response()->json(['error' => 'Server error: ' . $e->getMessage()], 500);
-        }
+    } catch (\Exception $e) {
+        \Log::error('Submission error: ' . $e->getMessage());
+        return response()->json(['error' => 'Server error: ' . $e->getMessage()], 500);
     }
+}
 
-     public function downloadDocument($id)
+
+    public function downloadDocument($id)
     {
         try {
-            $residentId = auth()->user()->resident_id ?? 1;
+            // ✅ FIX: Get actual resident ID
+            $user = auth()->user();
+            $resident = \App\Models\BarangayResident::where('email', $user->email)->first();
+            
+            if (!$resident) {
+                return response()->json(['error' => 'Resident profile not found'], 404);
+            }
+
+            $residentId = $resident->resident_id;
             
             // Verify the request belongs to the resident and is completed
             $request = DB::table('service_requests')
@@ -144,7 +164,15 @@ class ResidentController extends Controller
     public function showRequestDetails($id)
     {
         try {
-            $residentId = auth()->user()->resident_id ?? 1;
+            // ✅ FIX: Get actual resident ID
+            $user = auth()->user();
+            $resident = \App\Models\BarangayResident::where('email', $user->email)->first();
+            
+            if (!$resident) {
+                return response()->json(['error' => 'Resident profile not found'], 404);
+            }
+
+            $residentId = $resident->resident_id;
             
             $request = DB::table('service_requests')
                 ->where('request_id', $id)

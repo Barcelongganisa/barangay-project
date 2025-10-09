@@ -9,6 +9,8 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Redirect;
 use Illuminate\View\View;
+use App\Models\BarangayResident;
+
 
 class ResidentProfileController extends Controller
 {
@@ -33,79 +35,62 @@ class ResidentProfileController extends Controller
     /**
      * Update the user's profile information.
      */
-    public function update(Request $request)
-    {
-        $user = Auth::user();
+public function update(Request $request)
+{
+    $user = $request->user();
 
-        // Validate incoming data
-        $validated = $request->validate([
-            'first_name' => 'required|string|max:255',
-            'middle_name' => 'nullable|string|max:255',
-            'last_name' => 'required|string|max:255',
-            'email' => 'required|email',
-            'phone' => 'nullable|string|max:20',
-            'birthdate' => 'required|date',
-            'gender' => 'required|string',
-            'civil_status' => 'required|string',
-            'occupation' => 'required|string',
-            'barangay' => 'required|string',
-            'address' => 'required|string',
-        ]);
+    // Validate inputs
+    $validated = $request->validate([
+        'first_name' => ['required', 'string', 'max:255'],
+        'middle_name' => ['nullable', 'string', 'max:255'],
+        'last_name' => ['required', 'string', 'max:255'],
+        'email' => ['required', 'email', 'max:255', 'unique:users,email,' . $user->id],
+        'phone' => ['nullable', 'string', 'max:20'],
+        'birthdate' => ['required', 'date'],
+        'gender' => ['required', 'in:Male,Female,Others'],
+        'civil_status' => ['required', 'string', 'max:50'],
+        'occupation' => ['required', 'string', 'max:255'],
+        'barangay' => ['required', 'string', 'max:255'],
+        'address' => ['required', 'string', 'max:500'],
+    ]);
 
-        // ✅ Update users table
-    DB::table('users')
-        ->where('id', $user->id)
-        ->update([
+    try {
+        // 1️⃣ Update users table
+        $user->update([
             'name' => $validated['first_name'] . ' ' . ($validated['middle_name'] ?? '') . ' ' . $validated['last_name'],
             'email' => $validated['email'],
-            'updated_at' => now(),
         ]);
 
+        // 2️⃣ Update barangay_residents table
+        $resident = BarangayResident::where('resident_id', $user->id)->first();
 
-        // ✅ Check if resident exists in barangay_residents
-        $barangayResident = DB::table('barangay_residents')
-            ->where('resident_id', $user->id)
-            ->first();
-
-        if ($barangayResident) {
-            // Update existing record
-            DB::table('barangay_residents')
-                ->where('resident_id', $user->id)
-                ->update([
-                    'contact_number' => $validated['phone'],
-                    'date_of_birth' => $validated['birthdate'],
-                    'gender' => $validated['gender'],
-                    'civil_status' => $validated['civil_status'],
-                    'occupation' => $validated['occupation'],
-                    'barangay_name' => $validated['barangay'],
-                    'address' => $validated['address'],
-                    'first_name' => $validated['first_name'],
-                    'middle_name' => $validated['middle_name'] ?? null,
-                    'last_name' => $validated['last_name'],
-                    'updated_at' => now(),
-                ]);
-        } else {
-            // Insert new record if not exists
-            DB::table('barangay_residents')->insert([
-                'resident_id' => $user->id,
+        if ($resident) {
+            $resident->update([
                 'first_name' => $validated['first_name'],
                 'middle_name' => $validated['middle_name'] ?? null,
                 'last_name' => $validated['last_name'],
-                'contact_number' => $validated['phone'],
+                'contact_number' => $validated['phone'] ?? '',
                 'date_of_birth' => $validated['birthdate'],
                 'gender' => $validated['gender'],
                 'civil_status' => $validated['civil_status'],
                 'occupation' => $validated['occupation'],
                 'barangay_name' => $validated['barangay'],
                 'address' => $validated['address'],
-                'created_at' => now(),
+                'email' => $validated['email'],
                 'updated_at' => now(),
             ]);
+        } else {
+            return redirect()->back()->withErrors(['error' => 'Resident profile not found.']);
         }
 
         return redirect()->route('resident.resident-profile')
-            ->with('status', 'profile-updated');
+                         ->with('status', 'profile-updated');
+
+    } catch (\Exception $e) {
+        return redirect()->back()->withErrors(['error' => 'Update failed: ' . $e->getMessage()]);
     }
+}
+
 
     public function updatePhoto(Request $request): RedirectResponse
     {
