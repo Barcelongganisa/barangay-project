@@ -1,7 +1,7 @@
 <x-resident-layout>
-    @php
+    {{-- @php
         // Get the current resident's ID
-        $residentId = auth()->user()->resident_id ?? 1;
+        $residentId = auth()->resident_id();
         
         // Get requests for this resident
         $requests = Illuminate\Support\Facades\DB::table('service_requests')
@@ -17,7 +17,7 @@
         
         // Get recent requests (last 4)
         $recentRequests = $requests->take(4);
-    @endphp
+    @endphp --}}
 
     <!-- Summary Cards -->
     <div class="container-fluid p-4">

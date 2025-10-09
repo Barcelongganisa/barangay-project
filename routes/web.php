@@ -14,9 +14,9 @@ Route::get('/', fn() => view('welcome'));
 
 // Resident routes
 Route::middleware(['auth'])->group(function () {
-    Route::get('/dashboard', function () {
-        return view('resident-dashboard');
-    })->name('dashboard');
+    Route::get('/dashboard', [ResidentController::class, 'dashboard'])
+    ->name('dashboard');
+
 
     // Resident-specific routes
     Route::prefix('resident')->name('resident.')->group(function () {
