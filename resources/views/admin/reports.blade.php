@@ -256,13 +256,14 @@
         </div>
     </div>
 
-    @push('scripts')
+    {{-- @push('scripts') --}}
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script>
         document.addEventListener('DOMContentLoaded', function() {
             document.querySelectorAll('.nav-link').forEach(link => {
                 if(link.href.includes('reports')) link.classList.add('active');
             });
+            console.log("Requests over time:", @json($requestsOverTime));
 
             // Requests Chart - Dynamic Data
             const requestsCtx = document.getElementById('requestsChart').getContext('2d');
@@ -277,7 +278,7 @@
                             borderColor: '#0d6efd', 
                             backgroundColor: 'rgba(13, 110, 253, 0.1)',
                             tension: 0.4,
-                            fill: true,
+                            fill: true, // Keep fill for this dataset only
                             borderWidth: 3
                         },
                         { 
@@ -286,7 +287,7 @@
                             borderColor: '#198754', 
                             backgroundColor: 'rgba(25, 135, 84, 0.1)',
                             tension: 0.4,
-                            fill: true,
+                            fill: false, // Remove fill from this dataset
                             borderWidth: 3
                         }
                     ]
@@ -307,6 +308,7 @@
                     scales: {
                         y: {
                             beginAtZero: true,
+                            // stacked: true,
                             title: {
                                 display: true,
                                 text: 'Number of Requests'
@@ -367,5 +369,5 @@
             window.open(`/admin/reports/export?time_range=${timeRange}`, '_blank');
         }
     </script>
-    @endpush
+    {{-- @endpush --}}
 </x-admin-layout>

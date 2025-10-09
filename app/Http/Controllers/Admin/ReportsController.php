@@ -73,31 +73,50 @@ class ReportsController extends Controller
         return BarangayResident::where('created_at', '>=', $startDate)->count();
     }
 
-    private function getRequestsOverTime($startDate)
-    {
+private function getRequestsOverTime($startDate)
+{
+    $timeRange = request('time_range', '30days');
+
+    if (in_array($timeRange, ['7days', '30days', '90days'])) {
+        // Group by DATE for short ranges
         $requests = ServiceRequest::select(
-                DB::raw('MONTH(request_date) as month'),
+                DB::raw('DATE(request_date) as date'),
                 DB::raw('COUNT(*) as total'),
                 DB::raw('SUM(CASE WHEN status = "completed" THEN 1 ELSE 0 END) as completed')
             )
             ->where('request_date', '>=', $startDate)
-            ->groupBy('month')
-            ->orderBy('month')
+            ->groupBy('date')
+            ->orderBy('date')
             ->get();
-
-        // If no data, return empty collection
-        if ($requests->isEmpty()) {
-            return collect();
-        }
 
         return $requests->map(function($item) {
             return [
-                'month' => Carbon::create()->month($item->month)->format('M'),
-                'total' => $item->total,
-                'completed' => $item->completed
+                'label' => Carbon::parse($item->date)->format('M j'), // e.g. "Oct 8"
+                'total' => (int) $item->total,
+                'completed' => (int) $item->completed,
             ];
         });
     }
+
+    // Otherwise (year range): group by MONTH
+    $requests = ServiceRequest::select(
+            DB::raw('MONTH(request_date) as month'),
+            DB::raw('COUNT(*) as total'),
+            DB::raw('SUM(CASE WHEN status = "completed" THEN 1 ELSE 0 END) as completed')
+        )
+        ->where('request_date', '>=', $startDate)
+        ->groupBy('month')
+        ->orderBy('month')
+        ->get();
+
+    return $requests->map(function($item) {
+        return [
+            'label' => Carbon::create()->month($item->month)->format('M'), // e.g. "Jan"
+            'total' => (int) $item->total,
+            'completed' => (int) $item->completed,
+        ];
+    });
+}
 
     private function getDocumentTypeStats($startDate)
     {
