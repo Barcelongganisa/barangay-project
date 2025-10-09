@@ -9,6 +9,9 @@ class Payment extends Model
 {
     use HasFactory;
 
+    // Set the primary key
+    protected $primaryKey = 'payment_id';
+
     protected $fillable = [
         'resident_id',
         'request_id',

@@ -63,6 +63,7 @@ Route::middleware(['auth'])->prefix('admin')->group(function () {
     Route::get('/manage-requests', [ManageRequestsController::class, 'index'])->name('admin.manage.requests');
     Route::get('/requests/{id}/details', [ManageRequestsController::class, 'getRequestDetails'])->name('admin.requests.details');
     Route::post('/requests/{id}/status', [ManageRequestsController::class, 'updateStatus'])->name('admin.requests.updateStatus');
+    Route::get('/requests/{id}/payment-details', [ManageRequestsController::class, 'getPaymentDetails'])->name('admin.requests.paymentDetails'); 
     
     // Manage Residents routes  
     Route::get('/manage-residents', [ManageResidentsController::class, 'index'])->name('admin.manage.residents');
