@@ -135,22 +135,65 @@
                                     <!-- Hidden role input -->
                                     <input type="hidden" name="role" value="resident">
 
+                                    <!-- Full Name -->
                                     <div class="mb-3">
-                                        <label class="form-label">Name</label>
-                                        <input type="text" name="name" class="form-control" required placeholder="Your Name">
+                                        <label class="form-label">Full Name</label>
+                                        <input type="text" name="name" class="form-control" required placeholder="Your full name">
                                     </div>
+
+                                    <!-- Email -->
                                     <div class="mb-3">
                                         <label class="form-label">Email</label>
                                         <input type="email" name="email" class="form-control" required placeholder="Enter your email">
                                     </div>
+
+                                    <!-- Address -->
+                                    <div class="mb-3">
+                                        <label class="form-label">Address</label>
+                                        <input type="text" name="address" class="form-control" required placeholder="Enter your address">
+                                    </div>
+
+                                    <!-- Birthday -->
+                                    <div class="mb-3">
+                                        <label class="form-label">Birthday</label>
+                                        <input type="date" name="birthday" class="form-control" required>
+                                    </div>
+
+                                    <!-- Gender -->
+                                    <div class="mb-3">
+                                        <label class="form-label">Gender</label>
+                                        <select name="gender" class="form-select" required>
+                                            <option value="" disabled selected>Select your gender</option>
+                                            <option value="Male">Male</option>
+                                            <option value="Female">Female</option>
+                                            <option value="Other">Other</option>
+                                        </select>
+                                    </div>
+
+                                    <!-- Years of Residency -->
+                                    <div class="mb-3">
+                                        <label class="form-label">Years of Residency</label>
+                                        <input type="number" name="years_of_residency" class="form-control" placeholder="Enter number of years" required>
+                                    </div>
+
+                                    <!-- Valid ID Upload -->
+                                    <div class="mb-3">
+                                        <label class="form-label">Valid ID (for verification)</label>
+                                        <input type="file" name="valid_id" class="form-control" accept=".jpg,.jpeg,.png,.pdf" required>
+                                    </div>
+
+                                    <!-- Password -->
                                     <div class="mb-3">
                                         <label class="form-label">Password</label>
                                         <input type="password" name="password" class="form-control" required placeholder="Create a password">
                                     </div>
+
+                                    <!-- Confirm Password -->
                                     <div class="mb-3">
                                         <label class="form-label">Confirm Password</label>
                                         <input type="password" name="password_confirmation" class="form-control" required placeholder="Confirm your password">
                                     </div>
+
                                     <button type="submit" class="btn btn-primary w-100">Register</button>
                                 </form>
 
@@ -160,6 +203,7 @@
                                     Already have an account? <a href="#" onclick="showForm('loginForm'); return false;">Login</a>
                                 </div>
                             </div>
+
 
                             <!-- Forgot Password Form -->
                             <div id="forgotForm" class="d-none">
