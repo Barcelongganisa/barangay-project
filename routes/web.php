@@ -66,6 +66,10 @@ Route::middleware(['auth'])->prefix('admin')->group(function () {
     Route::post('/requests/{id}/status', [ManageRequestsController::class, 'updateStatus'])->name('admin.requests.updateStatus');
     Route::get('/requests/{id}/payment-details', [ManageRequestsController::class, 'getPaymentDetails'])->name('admin.requests.paymentDetails'); 
     
+    // Add the completed document download route
+    Route::get('/requests/{id}/download-completed', [ManageRequestsController::class, 'downloadCompleted'])
+        ->name('admin.requests.download-completed');
+    
     // Manage Residents routes  
     Route::get('/manage-residents', [ManageResidentsController::class, 'index'])->name('admin.manage.residents');
     Route::get('/residents/{id}/details', [ManageResidentsController::class, 'getResidentDetails'])->name('admin.residents.details');

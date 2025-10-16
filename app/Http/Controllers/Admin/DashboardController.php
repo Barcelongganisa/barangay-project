@@ -34,7 +34,7 @@ class DashboardController extends Controller
         )->first();
 
         // Get pending requests with resident info
-        $pendingRequests = ServiceRequest::with('resident')
+        $pendingRequests = ServiceRequest::with(['resident', 'documents'])
             ->where('status', 'pending')
             ->orderBy('request_date', 'desc')
             ->get();

@@ -1,4 +1,13 @@
 <x-admin-layout>
+    @php
+        // Function to format ID as BRGY-YEAR-00000
+        function formatId($id) {
+            $currentYear = date('Y');
+            $paddedId = str_pad($id, 5, '0', STR_PAD_LEFT);
+            return "BRGY-{$currentYear}-{$paddedId}";
+        }
+    @endphp
+
     <style>
         .main-content {
             margin-left: 250px;
@@ -67,7 +76,7 @@
                             <tbody id="residentsTableBody">
                                 @forelse($residents as $resident)
                                     <tr data-resident-id="{{ $resident->resident_id }}">
-                                        <th scope="row">RES-{{ str_pad($resident->resident_id, 3, '0', STR_PAD_LEFT) }}</th>
+                                        <th scope="row">{{ formatId($resident->resident_id) }}</th>
                                         <td>{{ $resident->first_name }} {{ $resident->last_name }}</td>
                                         <td>{{ $resident->address ?? 'No address provided' }}</td>
                                         <td>{{ $resident->contact_number ?? 'No contact number' }}</td>
@@ -319,8 +328,11 @@
                     if (data.success) {
                         const resident = data.resident;
                         
-                        document.getElementById('modal-resident-id').textContent = 'RES-' + String(residentId).padStart(3, '0');
-                        document.getElementById('modal-resident-id-display').textContent = 'RES-' + String(residentId).padStart(3, '0');
+                        // Format the ID as BRGY-2025-00001
+                        const formattedId = 'BRGY-' + new Date().getFullYear() + '-' + String(residentId).padStart(5, '0');
+                        
+                        document.getElementById('modal-resident-id').textContent = formattedId;
+                        document.getElementById('modal-resident-id-display').textContent = formattedId;
                         document.getElementById('modal-name').textContent = `${resident.first_name} ${resident.last_name}`;
                         document.getElementById('modal-address').textContent = resident.address || 'No address provided';
                         document.getElementById('modal-contact').textContent = resident.contact_number || 'No contact number';
@@ -336,7 +348,7 @@
                 }
             }
 
-            // Load resident history - FIXED to show ALL service requests
+            // Load resident history
             async function loadResidentHistory(residentId) {
                 try {
                     console.log('Loading history for resident:', residentId);
@@ -363,8 +375,11 @@
                             const statusClass = 'status-' + request.status.replace(' ', '-');
                             const statusDisplay = request.status.charAt(0).toUpperCase() + request.status.slice(1);
                             
+                            // Format request ID as BRGY-2025-00001
+                            const formattedRequestId = 'BRGY-' + new Date().getFullYear() + '-' + String(request.request_id).padStart(5, '0');
+                            
                             row.innerHTML = `
-                                <td>REQ-${String(request.request_id).padStart(3, '0')}</td>
+                                <td>${formattedRequestId}</td>
                                 <td>${request.request_type}</td>
                                 <td>${requestDate.toLocaleDateString('en-US', { 
                                     month: 'short', 

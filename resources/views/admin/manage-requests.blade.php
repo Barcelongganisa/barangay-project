@@ -1,4 +1,13 @@
 <x-admin-layout>
+    @php
+        // Function to format request ID as BRGY-YEAR-00000
+        function formatRequestId($id) {
+            $currentYear = date('Y');
+            $paddedId = str_pad($id, 5, '0', STR_PAD_LEFT);
+            return "BRGY-{$currentYear}-{$paddedId}";
+        }
+    @endphp
+
     <style>
         .main-content {
             margin-left: 250px;
@@ -26,6 +35,23 @@
         .btn-custom-size {
             width: 130px;
             white-space: nowrap;
+        }
+        
+        .table-primary th {
+            background-color: #007bff;
+            color: white;
+            font-weight: 600;
+        }
+
+        .table-hover tbody tr:hover {
+            background-color: rgba(0, 123, 255, 0.075);
+        }
+
+        .text-truncate {
+            max-width: 200px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
         }
     </style>
 
@@ -78,7 +104,7 @@
                         <table class="table table-hover align-middle" id="requestsTable">
                             <thead class="table-light">
                                 <tr>
-                                    <th>Request #</th>
+                                    <th>Request ID</th>
                                     <th>Resident Name</th>
                                     <th>Document Type</th>
                                     <th>Date Submitted</th>
@@ -89,7 +115,7 @@
                             <tbody id="requestsTableBody">
                                 @forelse($requests as $request)
                                     <tr data-request-id="{{ $request->request_id }}" data-status="{{ $request->status }}">
-                                        <th scope="row">REQ-{{ str_pad($request->request_id, 3, '0', STR_PAD_LEFT) }}</th>
+                                        <th scope="row">{{ formatRequestId($request->request_id) }}</th>
                                         <td>{{ $request->resident->first_name }} {{ $request->resident->last_name }}</td>
                                         <td>{{ $request->request_type }}</td>
                                         <td>
@@ -111,7 +137,8 @@
                                                         data-bs-toggle="modal" 
                                                         data-bs-target="#processModal" 
                                                         data-action-type="{{ $request->status }}"
-                                                        data-request-id="{{ $request->request_id }}">
+                                                        data-request-id="{{ $request->request_id }}"
+                                                        data-formatted-id="{{ formatRequestId($request->request_id) }}">
                                                     @if($request->status == 'waiting-payment')
                                                         Confirm Payment
                                                     @else
@@ -122,7 +149,8 @@
                                                 <button class="btn btn-sm btn-outline-secondary btn-custom-size view-details-btn" 
                                                         data-bs-toggle="modal" 
                                                         data-bs-target="#detailsModal"
-                                                        data-request-id="{{ $request->request_id }}">
+                                                        data-request-id="{{ $request->request_id }}"
+                                                        data-formatted-id="{{ formatRequestId($request->request_id) }}">
                                                     View
                                                 </button>
                                             @endif
@@ -152,12 +180,79 @@
                     <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                 </div>
                 <div class="modal-body">
-                    <p><strong>Resident Name:</strong> <span id="modal-resident-name"></span></p>
-                    <p><strong>Document Type:</strong> <span id="modal-document-type"></span></p>
-                    <p><strong>Date Submitted:</strong> <span id="modal-date-submitted"></span></p>
-                    <p><strong>Current Status:</strong> <span id="modal-status"></span></p>
+                    <div class="row">
+                        <div class="col-md-6">
+                            <h6>Request Information</h6>
+                            <table class="table table-sm table-borderless">
+                                <tr>
+                                    <td><strong>Request ID:</strong></td>
+                                    <td id="modal-request-id-text"></td>
+                                </tr>
+                                <tr>
+                                    <td><strong>Resident Name:</strong></td>
+                                    <td id="modal-resident-name"></td>
+                                </tr>
+                                <tr>
+                                    <td><strong>Document Type:</strong></td>
+                                    <td id="modal-document-type"></td>
+                                </tr>
+                                <tr>
+                                    <td><strong>Date Submitted:</strong></td>
+                                    <td id="modal-date-submitted"></td>
+                                </tr>
+                                <tr>
+                                    <td><strong>Current Status:</strong></td>
+                                    <td id="modal-status"></td>
+                                </tr>
+                            </table>
+                        </div>
+                        <div class="col-md-6">
+                            <h6>Processing Information</h6>
+                            <table class="table table-sm table-borderless">
+                                <tr>
+                                    <td><strong>Processing Fee:</strong></td>
+                                    <td>₱100.00</td>
+                                </tr>
+                                <tr>
+                                    <td><strong>Estimated Time:</strong></td>
+                                    <td>2-3 Business Days</td>
+                                </tr>
+                                <tr>
+                                    <td><strong>Priority:</strong></td>
+                                    <td><span class="badge bg-info">Normal</span></td>
+                                </tr>
+                            </table>
+                        </div>
+                    </div>
+                    
                     <hr>
-                    <div id="modal-dynamic-content"></div>
+                    <h6>Purpose / Remarks</h6>
+                    <div class="card">
+                        <div class="card-body">
+                            <p class="mb-0" id="modal-remarks">No specific remarks provided</p>
+                        </div>
+                    </div>
+                    
+                    <div id="modal-documents-section" class="mt-4" style="display: none;">
+                        <h6>Submitted Documents</h6>
+                        <div class="table-responsive">
+                            <table class="table table-sm table-hover table-bordered">
+                                <thead class="table-primary">
+                                    <tr>
+                                        <th width="30%">Document Type</th>
+                                        <th width="35%">File Name</th>
+                                        <th width="20%">Upload Date</th>
+                                        <th width="15%">Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="modal-documents-tbody">
+                                    <!-- Documents will be loaded here dynamically -->
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                    
+                    <div id="modal-dynamic-content" class="mt-3"></div>
                 </div>
                 <div class="modal-footer">
                     <button class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
@@ -282,7 +377,8 @@
                 document.querySelectorAll('.view-details-btn').forEach(button => {
                     button.addEventListener('click', function () {
                         const requestId = this.dataset.requestId;
-                        console.log('View details for:', requestId);
+                        const formattedId = this.dataset.formattedId;
+                        console.log('View details for:', requestId, formattedId);
                         
                         // Get basic info from table row
                         const row = this.closest('tr');
@@ -292,60 +388,15 @@
                         const status = row.querySelector('.request-status').textContent;
                         
                         // Populate modal
-                        document.getElementById('modal-request-id').textContent = 'REQ-' + String(requestId).padStart(3, '0');
+                        document.getElementById('modal-request-id').textContent = formattedId;
+                        document.getElementById('modal-request-id-text').textContent = formattedId;
                         document.getElementById('modal-resident-name').textContent = residentName;
                         document.getElementById('modal-document-type').textContent = documentType;
                         document.getElementById('modal-date-submitted').textContent = dateSubmitted;
                         document.getElementById('modal-status').textContent = status;
                         
-                        // Add dynamic content based on status
-                        const dynamicContent = document.getElementById('modal-dynamic-content');
-                        const statusLower = status.toLowerCase();
-                        
-                        if (statusLower.includes('pending') || statusLower.includes('review')) {
-                            dynamicContent.innerHTML = `
-                                <h6>Admin Comment</h6>
-                                <div class="alert alert-warning">
-                                    This request is awaiting review by an administrator.
-                                </div>`;
-                        } else if (statusLower.includes('waiting')) {
-                            dynamicContent.innerHTML = `
-                                <h6>Admin Comment</h6>
-                                <div class="alert alert-secondary">
-                                    The request has been approved. Waiting for resident to complete payment.
-                                    <p class="mb-0 mt-2"><strong>Fee:</strong> ₱50.00</p>
-                                </div>`;
-                        } else if (statusLower.includes('processing')) {
-                            dynamicContent.innerHTML = `
-                                <h6>Admin Comment</h6>
-                                <div class="alert alert-info">
-                                    The request is currently being processed.
-                                </div>`;
-                        } else if (statusLower.includes('declined')) {
-                            dynamicContent.innerHTML = `
-                                <h6>Admin Comment</h6>
-                                <div class="alert alert-danger">
-                                    This request has been declined.
-                                    <p class="mb-0 mt-2"><strong>Reason:</strong> Please check the uploaded documents.</p>
-                                </div>`;
-                        } else if (statusLower.includes('complete')) {
-                            dynamicContent.innerHTML = `
-                                <h6>Admin Comment</h6>
-                                <div class="alert alert-success">
-                                    This request has been completed.
-                                    <p class="mb-0 mt-2"><strong>Comment:</strong> Document ready for pickup.</p>
-                                </div>
-                                <hr>
-                                <h6>Generated Document</h6>
-                                <div class="alert alert-success d-flex align-items-center">
-                                    <i class="bi bi-file-earmark-check-fill me-2 fs-4"></i>
-                                    <div>
-                                        <p class="mb-0"><strong>Completed_Document.pdf</strong></p>
-                                        <p class="mb-0 text-muted">Ready for pickup at barangay hall.</p>
-                                    </div>
-                                    <a href="#" class="btn btn-sm btn-outline-success ms-auto">Download</a>
-                                </div>`;
-                        }
+                        // Load detailed information including documents
+                        loadDetailedRequestInfo(requestId, formattedId);
                     });
                 });
 
@@ -354,6 +405,7 @@
                     button.addEventListener('click', function () {
                         const requestId = this.dataset.requestId;
                         const actionType = this.dataset.actionType;
+                        const formattedId = this.dataset.formattedId;
                         console.log('Process request:', requestId, 'Action:', actionType);
                         
                         // Get basic info from table row
@@ -362,7 +414,7 @@
                         const documentType = row.cells[2].textContent;
                         
                         // Populate basic info
-                        document.getElementById('process-modal-request-id').textContent = 'REQ-' + String(requestId).padStart(3, '0');
+                        document.getElementById('process-modal-request-id').textContent = formattedId;
                         document.getElementById('process-modal-resident-name').textContent = residentName;
                         document.getElementById('process-modal-document-type').textContent = documentType;
                         
@@ -411,47 +463,187 @@
                 });
             }
 
-// Function to load documents from API
-async function loadRequestDocuments(requestId) {
-    try {
-        console.log('Loading documents for request:', requestId);
-        const response = await fetch('/admin/requests/' + requestId + '/details');
-        
-        if (!response.ok) {
-            throw new Error('Failed to load documents');
-        }
-        
-        const data = await response.json();
-        console.log('Documents data:', data);
-        
-        const documentsList = document.getElementById('process-modal-documents-list');
-        documentsList.innerHTML = '';
-        
-        // Check if we have documents in the response
-        if (data.success && data.documents && data.documents.length > 0) {
-            console.log('Found documents:', data.documents);
-            data.documents.forEach(doc => {
-                const docElement = document.createElement('div');
-                docElement.className = 'alert alert-info d-flex justify-content-between align-items-center mb-2';
-                docElement.innerHTML = `
-                    <div>
-                        <i class="bi bi-file-earmark-text me-2"></i>
-                        ${doc.document_type}
-                    </div>
-                    <a href="/storage/${doc.file_path}" target="_blank" class="btn btn-sm btn-primary">View</a>
-                `;
-                documentsList.appendChild(docElement);
-            });
-        } else {
-            console.log('No documents found in response');
-            documentsList.innerHTML = '<div class="alert alert-warning">No documents uploaded for this request.</div>';
-        }
-    } catch (error) {
-        console.error('Error loading documents:', error);
-        const documentsList = document.getElementById('process-modal-documents-list');
-        documentsList.innerHTML = '<div class="alert alert-danger">Error loading documents: ' + error.message + '</div>';
-    }
-}
+            // Function to load detailed request information
+            async function loadDetailedRequestInfo(requestId, formattedId) {
+                try {
+                    const response = await fetch('/admin/requests/' + requestId + '/details');
+                    
+                    if (!response.ok) {
+                        throw new Error('Failed to load request details');
+                    }
+                    
+                    const data = await response.json();
+                    console.log('Request details:', data);
+                    
+                    // Update remarks
+                    if (data.request && data.request.remarks) {
+                        document.getElementById('modal-remarks').textContent = data.request.remarks;
+                    }
+                    
+                    // Load documents
+                    if (data.success && data.documents && data.documents.length > 0) {
+                        const documentsSection = document.getElementById('modal-documents-section');
+                        const documentsTbody = document.getElementById('modal-documents-tbody');
+                        
+                        documentsSection.style.display = 'block';
+                        documentsTbody.innerHTML = '';
+                        
+                        data.documents.forEach(doc => {
+                            // FIX: Use the request_date from the service_requests table as upload date
+                            const uploadDate = data.request && data.request.request_date 
+                                ? new Date(data.request.request_date).toLocaleDateString('en-US', {
+                                    year: 'numeric',
+                                    month: 'short',
+                                    day: 'numeric',
+                                    hour: '2-digit',
+                                    minute: '2-digit'
+                                })
+                                : 'Unknown';
+                            
+                            const documentRow = `
+                                <tr>
+                                    <td>
+                                        <div class="d-flex align-items-center">
+                                            <i class="bi bi-file-earmark-text text-primary me-2"></i>
+                                            <span>${doc.document_type || 'Supporting Document'}</span>
+                                        </div>
+                                    </td>
+                                    <td>
+                                        <span class="text-truncate" title="${doc.file_name || 'Document'}">
+                                            ${doc.file_name || 'Document'}
+                                        </span>
+                                    </td>
+                                    <td>
+                                        <small class="text-muted">${uploadDate}</small>
+                                    </td>
+                                    <td>
+                                        <button class="btn btn-sm btn-outline-primary view-document-btn" 
+                                                data-file-path="${doc.file_path}"
+                                                title="View Document">
+                                            <i class="bi bi-eye"></i> View
+                                        </button>
+                                        <button class="btn btn-sm btn-outline-success download-document-btn ms-1" 
+                                                data-file-path="${doc.file_path}"
+                                                data-file-name="${doc.file_name || 'document'}"
+                                                title="Download Document">
+                                            <i class="bi bi-download"></i>
+                                        </button>
+                                    </td>
+                                </tr>
+                            `;
+                            documentsTbody.innerHTML += documentRow;
+                        });
+                        
+                        // Add event listeners for document viewing
+                        documentsTbody.querySelectorAll('.view-document-btn').forEach(btn => {
+                            btn.addEventListener('click', function() {
+                                const filePath = this.getAttribute('data-file-path');
+                                if (filePath) {
+                                    window.open('/storage/' + filePath, '_blank');
+                                } else {
+                                    alert('Document path not available');
+                                }
+                            });
+                        });
+
+                        // Add event listeners for document download
+                        documentsTbody.querySelectorAll('.download-document-btn').forEach(btn => {
+                            btn.addEventListener('click', function() {
+                                const filePath = this.getAttribute('data-file-path');
+                                const fileName = this.getAttribute('data-file-name');
+                                if (filePath) {
+                                    downloadIndividualDocument(filePath, fileName);
+                                } else {
+                                    alert('Document path not available');
+                                }
+                            });
+                        });
+                    } else {
+                        // Hide documents section if no documents
+                        document.getElementById('modal-documents-section').style.display = 'none';
+                    }
+                    
+                } catch (error) {
+                    console.error('Error loading request details:', error);
+                    // Hide documents section on error
+                    document.getElementById('modal-documents-section').style.display = 'none';
+                }
+            }
+
+            // Function to load documents from API
+            async function loadRequestDocuments(requestId) {
+                try {
+                    console.log('Loading documents for request:', requestId);
+                    const response = await fetch('/admin/requests/' + requestId + '/details');
+                    
+                    if (!response.ok) {
+                        throw new Error('Failed to load documents');
+                    }
+                    
+                    const data = await response.json();
+                    console.log('Documents data:', data);
+                    
+                    const documentsList = document.getElementById('process-modal-documents-list');
+                    documentsList.innerHTML = '';
+                    
+                    // Check if we have documents in the response
+                    if (data.success && data.documents && data.documents.length > 0) {
+                        console.log('Found documents:', data.documents);
+                        data.documents.forEach(doc => {
+                            const docElement = document.createElement('div');
+                            docElement.className = 'alert alert-info d-flex justify-content-between align-items-center mb-2';
+                            docElement.innerHTML = `
+                                <div>
+                                    <i class="bi bi-file-earmark-text me-2"></i>
+                                    ${doc.document_type}
+                                </div>
+                                <div>
+                                    <a href="/storage/${doc.file_path}" target="_blank" class="btn btn-sm btn-primary me-1">View</a>
+                                    <button class="btn btn-sm btn-success download-document-btn" 
+                                            data-file-path="${doc.file_path}"
+                                            data-file-name="${doc.file_name || 'document'}">
+                                        Download
+                                    </button>
+                                </div>
+                            `;
+                            documentsList.appendChild(docElement);
+                        });
+
+                        // Add event listeners for download buttons in process modal
+                        documentsList.querySelectorAll('.download-document-btn').forEach(btn => {
+                            btn.addEventListener('click', function() {
+                                const filePath = this.getAttribute('data-file-path');
+                                const fileName = this.getAttribute('data-file-name');
+                                if (filePath) {
+                                    downloadIndividualDocument(filePath, fileName);
+                                } else {
+                                    alert('Document path not available');
+                                }
+                            });
+                        });
+                    } else {
+                        console.log('No documents found in response');
+                        documentsList.innerHTML = '<div class="alert alert-warning">No documents uploaded for this request.</div>';
+                    }
+                } catch (error) {
+                    console.error('Error loading documents:', error);
+                    const documentsList = document.getElementById('process-modal-documents-list');
+                    documentsList.innerHTML = '<div class="alert alert-danger">Error loading documents: ' + error.message + '</div>';
+                }
+            }
+
+            // Function to download individual document
+            function downloadIndividualDocument(filePath, fileName) {
+                console.log('Downloading document:', filePath, fileName);
+                
+                // Create a temporary anchor element to trigger download
+                const link = document.createElement('a');
+                link.href = '/storage/' + filePath;
+                link.download = fileName || 'document';
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+            }
 
             // Global function to update request status
             window.updateRequestStatus = async function(requestId, newStatus) {
