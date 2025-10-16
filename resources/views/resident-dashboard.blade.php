@@ -1,24 +1,4 @@
 <x-resident-layout>
-    {{-- @php
-        // Get the current resident's ID
-        $residentId = auth()->resident_id();
-        
-        // Get requests for this resident
-        $requests = Illuminate\Support\Facades\DB::table('service_requests')
-            ->where('resident_id', $residentId)
-            ->orderBy('request_date', 'desc')
-            ->get();
-        
-        // Calculate statistics
-        $totalRequests = $requests->count();
-        $completedRequests = $requests->where('status', 'completed')->count();
-        $pendingRequests = $requests->where('status', 'pending')->count();
-        $processingRequests = $requests->where('status', 'processing')->count();
-        
-        // Get recent requests (last 4)
-        $recentRequests = $requests->take(4);
-    @endphp --}}
-
     <!-- Summary Cards -->
     <div class="container-fluid p-4">
         <div class="row g-4">

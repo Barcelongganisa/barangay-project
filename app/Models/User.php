@@ -20,6 +20,11 @@ class User extends Authenticatable
         'email',
         'password',
         'role',
+        'address', 
+        'birthday', 
+        'gender', 
+        'years_of_residency', 
+        'valid_id_path',
     ];
 
     /**
@@ -59,12 +64,12 @@ class User extends Authenticatable
                     'last_name' => 'N/A',
                     'middle_name' => null,
                     'contact_number' => 'N/A',
-                    'date_of_birth' => now(),
-                    'gender' => 'Other',
+                    'date_of_birth' => $user->birthday ?? now(), // Use user's birthday if available
+                    'gender' => $user->gender ?? 'Other', // Use user's gender if available
                     'civil_status' => 'Single',
                     'occupation' => 'N/A',
                     'barangay_name' => 'Unknown Barangay',
-                    'address' => 'N/A',
+                    'address' => $user->address ?? 'N/A', // Use user's address if available
                     'email' => $user->email,
                     'created_at' => now(),
                     'updated_at' => now(),
