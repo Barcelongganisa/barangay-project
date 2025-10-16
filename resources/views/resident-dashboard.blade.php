@@ -1,4 +1,13 @@
 <x-resident-layout>
+    @php
+        // Function to format request ID as BRGY-YEAR-00000
+        function formatRequestId($id) {
+            $currentYear = date('Y');
+            $paddedId = str_pad($id, 5, '0', STR_PAD_LEFT);
+            return "BRGY-{$currentYear}-{$paddedId}";
+        }
+    @endphp
+
     <!-- Summary Cards -->
     <div class="container-fluid p-4">
         <div class="row g-4">
@@ -110,11 +119,15 @@
                                             data-status="{{ $request->status }}"
                                             data-request-date="{{ $request->request_date }}"
                                             data-updated-at="{{ $request->updated_at }}"
-                                            data-remarks="{{ $request->remarks }}">
+                                            data-remarks="{{ $request->remarks }}"
+                                            data-formatted-id="{{ formatRequestId($request->request_id) }}">
                                         View Details
                                     </button>
                                     @if($request->status == 'completed')
-                                        <button class="btn btn-outline-success btn-sm">Download</button>
+                                        <button class="btn btn-outline-success btn-sm download-doc-btn" 
+                                                data-request-id="{{ $request->request_id }}">
+                                            <i class="bi bi-download"></i> Download
+                                        </button>
                                     @endif
                                 </div>
                             </div>
@@ -137,16 +150,15 @@
         @endif
     </div>
 
-    <!-- View Details Modal -->
+    <!-- View Details Modal - Updated to match document.blade.php style -->
     <div class="modal fade" id="requestDetailsModal" tabindex="-1" aria-hidden="true">
         <div class="modal-dialog modal-lg">
             <div class="modal-content">
                 <div class="modal-header">
-                    <h5 class="modal-title" id="requestDetailsTitle">Request Details</h5>
+                    <h5 class="modal-title">Request Details: <span id="modal-request-ref"></span></h5>
                     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
                 <div class="modal-body" id="requestDetailsContent">
-                    <!-- Content will be loaded here via JavaScript -->
                     <div class="text-center">
                         <div class="spinner-border" role="status">
                             <span class="visually-hidden">Loading...</span>
@@ -156,22 +168,76 @@
                 </div>
                 <div class="modal-footer">
                     <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
-                    <button type="button" class="btn btn-primary" id="downloadCertificateBtn" style="display: none;">
-                        <i class="bi bi-download me-2"></i>Download Certificate
+                    <button type="button" class="btn btn-primary" id="printRequest">Print</button>
+                    <button type="button" class="btn btn-success" id="modalDownloadBtn" style="display: none;">
+                        <i class="bi bi-download me-2"></i>Download Document
                     </button>
                 </div>
             </div>
         </div>
     </div>
 
-    <!-- JavaScript for View Details -->
+    <!-- JavaScript for View Details - Updated to match document.blade.php -->
     <script>
     document.addEventListener('DOMContentLoaded', function() {
         const viewDetailsButtons = document.querySelectorAll('.view-details-btn');
         const modal = new bootstrap.Modal(document.getElementById('requestDetailsModal'));
-        const modalTitle = document.getElementById('requestDetailsTitle');
+        const modalTitle = document.getElementById('modal-request-ref');
         const modalContent = document.getElementById('requestDetailsContent');
-        const downloadBtn = document.getElementById('downloadCertificateBtn');
+        const modalDownloadBtn = document.getElementById('modalDownloadBtn');
+        const printBtn = document.getElementById('printRequest');
+
+        // Print functionality
+        printBtn.addEventListener('click', function() {
+            window.print();
+        });
+
+        // Download functionality for cards
+        document.querySelectorAll('.download-doc-btn').forEach(button => {
+            button.addEventListener('click', function() {
+                const requestId = this.getAttribute('data-request-id');
+                const button = this;
+                
+                // Show loading
+                const originalText = button.innerHTML;
+                button.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>';
+                button.disabled = true;
+
+                // Trigger download
+                window.location.href = `/resident/requests/${requestId}/download`;
+                
+                // Reset button after download starts
+                setTimeout(() => {
+                    button.innerHTML = originalText;
+                    button.disabled = false;
+                }, 3000);
+            });
+        });
+
+        // Modal download button
+        modalDownloadBtn.addEventListener('click', function() {
+            const requestId = this.getAttribute('data-request-id');
+            if (!requestId) {
+                console.error('No request ID found for download');
+                return;
+            }
+            
+            const button = this;
+            
+            // Show loading
+            const originalText = button.innerHTML;
+            button.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Downloading...';
+            button.disabled = true;
+
+            // Trigger download
+            window.location.href = `/resident/requests/${requestId}/download`;
+            
+            // Reset button
+            setTimeout(() => {
+                button.innerHTML = originalText;
+                button.disabled = false;
+            }, 3000);
+        });
 
         viewDetailsButtons.forEach(button => {
             button.addEventListener('click', function() {
@@ -182,13 +248,14 @@
                 const requestDate = this.getAttribute('data-request-date');
                 const updatedAt = this.getAttribute('data-updated-at');
                 const remarks = this.getAttribute('data-remarks');
+                const formattedId = this.getAttribute('data-formatted-id');
                 
-                showRequestDetails(requestId, requestType, status, requestDate, updatedAt, remarks);
+                showRequestDetails(requestId, requestType, status, requestDate, updatedAt, remarks, formattedId);
             });
         });
 
-        function showRequestDetails(requestId, requestType, status, requestDate, updatedAt, remarks) {
-            modalTitle.textContent = `Request Details - ${requestType}`;
+        function showRequestDetails(requestId, requestType, status, requestDate, updatedAt, remarks, formattedId) {
+            modalTitle.textContent = formattedId;
             
             // Format dates properly
             const formattedRequestDate = requestDate ? new Date(requestDate + ' UTC').toLocaleDateString('en-US', { 
@@ -202,86 +269,59 @@
                 month: 'long', 
                 day: 'numeric' 
             }) : 'Not specified';
+
+            // Document type mapping for better display
+            const documentTypeMapping = {
+                'clearance': 'Barangay Clearance',
+                'residency': 'Certificate of Residency',
+                'indigency': 'Certificate of Indigency',
+                'business': 'Business Permit', 
+                'id': 'Barangay ID',
+                'other': 'Other Document'
+            };
+
+            const displayRequestType = documentTypeMapping[requestType] || requestType;
             
             const detailsHtml = `
                 <div class="row">
                     <div class="col-md-6">
-                        <h6>Request Information</h6>
-                        <table class="table table-sm">
-                            <tr>
-                                <td><strong>Request ID:</strong></td>
-                                <td>#${requestId}</td>
-                            </tr>
-                            <tr>
-                                <td><strong>Service Type:</strong></td>
-                                <td>${requestType}</td>
-                            </tr>
-                            <tr>
-                                <td><strong>Status:</strong></td>
-                                <td><span class="badge ${getStatusBadgeClass(status)}">${status}</span></td>
-                            </tr>
-                            <tr>
-                                <td><strong>Request Date:</strong></td>
-                                <td>${formattedRequestDate}</td>
-                            </tr>
-                            <tr>
-                                <td><strong>Last Updated:</strong></td>
-                                <td>${formattedUpdatedDate}</td>
-                            </tr>
-                        </table>
+                        <p><strong>Request Type:</strong> ${displayRequestType}</p>
+                        <p><strong>Reference Number:</strong> ${formattedId}</p>
+                        <p><strong>Purpose:</strong> ${remarks || 'No specific remarks provided'}</p>
+                        <p><strong>Request Date:</strong> ${formattedRequestDate}</p>
+                        <p><strong>Last Updated:</strong> ${formattedUpdatedDate}</p>
                     </div>
                     <div class="col-md-6">
-                        <h6>Document Status</h6>
-                        <div class="alert alert-info">
-                            <i class="bi bi-info-circle me-2"></i>
-                            ${status === 'completed' ? 'Documents processed and approved' : 'Documents uploaded and under review'}
-                        </div>
+                        <p><strong>Status:</strong> <span class="badge ${getStatusBadgeClass(status)}">${getStatusDisplayText(status)}</span></p>
+                        <p><strong>Processing Fee:</strong> ₱100.00</p>  
                     </div>
                 </div>
-                
-                <div class="mt-3">
-                    <h6>Purpose / Remarks</h6>
-                    <div class="card">
-                        <div class="card-body">
-                            <p class="mb-0">${remarks || 'No specific remarks provided'}</p>
-                        </div>
+                <hr>
+                <h6>Current Status</h6>
+                <div id="modal-admin-comments">
+                    ${getStatusMessage(status)}
+                </div>
+                <hr>
+                <h6>Document Preview</h6>
+                <div class="text-center">
+                    <div class="border rounded p-4 bg-light">
+                        <i class="bi bi-file-earmark-pdf display-1 text-danger"></i>
+                        <h5 class="mt-3">${displayRequestType}</h5>
+                        <p class="text-muted">Reference: ${formattedId}</p>
+                        <p class="text-muted">Status: ${getStatusDisplayText(status)}</p>
                     </div>
                 </div>
-                
-                ${status === 'completed' ? `
-                <div class="alert alert-success mt-3">
-                    <i class="bi bi-check-circle-fill me-2"></i>
-                    <strong>Request Completed!</strong> Your document is ready for download.
-                </div>
-                ` : ''}
-                
-                ${status === 'pending' ? `
-                <div class="alert alert-warning mt-3">
-                    <i class="bi bi-clock-history me-2"></i>
-                    <strong>Request Pending</strong> - Waiting for barangay approval.
-                </div>
-                ` : ''}
-                
-                ${status === 'processing' ? `
-                <div class="alert alert-primary mt-3">
-                    <i class="bi bi-gear me-2"></i>
-                    <strong>Request in Progress</strong> - Currently being processed.
-                </div>
-                ` : ''}
             `;
             
             modalContent.innerHTML = detailsHtml;
             
-            // Show/hide download button based on status
+            // Show download button only for completed requests
             if (status === 'completed') {
-                downloadBtn.style.display = 'block';
-                downloadBtn.onclick = function() {
-                    alert('Download functionality will be implemented for request #' + requestId);
-                    // You can implement actual download later:
-                    // window.location.href = '/resident/requests/' + requestId + '/download';
-                };
+                modalDownloadBtn.style.display = 'block';
+                modalDownloadBtn.setAttribute('data-request-id', requestId);
             } else {
-                downloadBtn.style.display = 'none';
+                modalDownloadBtn.style.display = 'none';
+                modalDownloadBtn.removeAttribute('data-request-id');
             }
             
             modal.show();
@@ -296,6 +336,34 @@
                 case 'pending': return 'bg-warning text-dark';
                 default: return 'bg-secondary';
             }
+        }
+
+        function getStatusDisplayText(status) {
+            if (!status) return 'Unknown';
+            
+            switch(status.toLowerCase()) {
+                case 'completed': return 'Completed';
+                case 'processing': return 'Processing';
+                case 'pending': return 'Pending';
+                default: return status.charAt(0).toUpperCase() + status.slice(1);
+            }
+        }
+
+        function getStatusMessage(status) {
+            const messages = {
+                'completed': `<div class="alert alert-success" role="alert">
+                    <strong>Current Status:</strong> This request has been completed and the document is ready for download.
+                </div>`,
+                'processing': `<div class="alert alert-primary" role="alert">
+                    <strong>Current Status:</strong> Your request is currently being processed by the barangay office.
+                </div>`,
+                'pending': `<div class="alert alert-warning" role="alert">
+                    <strong>Current Status:</strong> Your request is pending review and approval.
+                </div>`
+            };
+            return messages[status] || `<div class="alert alert-info" role="alert">
+                <strong>Current Status:</strong> ${getStatusDisplayText(status)}
+            </div>`;
         }
     });
     </script>
