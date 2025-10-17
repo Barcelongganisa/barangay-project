@@ -39,6 +39,7 @@
         .status-processing { background-color: #cce5ff; color: #004085; }
         .status-completed { background-color: #d4edda; color: #155724; }
         .status-declined { background-color: #f8d7da; color: #721c24; }
+        .status-approved { background-color: #d4edda; color: #155724; }
     </style>
 
     <div class="main-content" id="mainContent">
@@ -70,6 +71,7 @@
                                     <th>Full Name</th>
                                     <th>Address</th>
                                     <th>Contact #</th>
+                                    <th>Status</th>
                                     <th>Actions</th>
                                 </tr>
                             </thead>
@@ -80,23 +82,24 @@
                                         <td>{{ $resident->first_name }} {{ $resident->last_name }}</td>
                                         <td>{{ $resident->address ?? 'No address provided' }}</td>
                                         <td>{{ $resident->contact_number ?? 'No contact number' }}</td>
+                                        <td><span class="request-status status-approved">Approved</span></td> {{-- NEW --}}
                                         <td>
                                             <div class="action-buttons">
-                                                <button class="btn btn-sm btn-outline-secondary view-details-btn" 
-                                                        data-bs-toggle="modal" 
+                                                <button class="btn btn-sm btn-outline-secondary view-details-btn"
+                                                        data-bs-toggle="modal"
                                                         data-bs-target="#residentDetailsModal"
                                                         data-resident-id="{{ $resident->resident_id }}">
                                                     View Details
                                                 </button>
-                                                <button class="btn btn-sm btn-info text-white history-btn" 
-                                                        data-bs-toggle="modal" 
+                                                <button class="btn btn-sm btn-info text-white history-btn"
+                                                        data-bs-toggle="modal"
                                                         data-bs-target="#residentHistoryModal"
                                                         data-resident-id="{{ $resident->resident_id }}"
                                                         data-resident-name="{{ $resident->first_name }} {{ $resident->last_name }}">
                                                     History
                                                 </button>
-                                                <button class="btn btn-sm btn-danger remove-btn" 
-                                                        data-bs-toggle="modal" 
+                                                <button class="btn btn-sm btn-danger remove-btn"
+                                                        data-bs-toggle="modal"
                                                         data-bs-target="#removeResidentModal"
                                                         data-resident-id="{{ $resident->resident_id }}"
                                                         data-resident-name="{{ $resident->first_name }} {{ $resident->last_name }}">
@@ -107,11 +110,39 @@
                                     </tr>
                                 @empty
                                     <tr>
-                                        <td colspan="5" class="text-center py-4">
+                                        <td colspan="6" class="text-center py-4">
                                             <div class="text-muted">No residents found.</div>
                                         </td>
                                     </tr>
                                 @endforelse
+
+                                {{-- EXAMPLE PA LANG TO NG DECLINE AND PENDING RESIDENTS --}}
+                                <tr>
+                                    <th scope="row">BRGY-2025-00011</th>
+                                    <td>Jose Rizal</td>
+                                    <td>Calamba, Laguna</td>
+                                    <td>09112223344</td>
+                                    <td><span class="request-status status-pending">Pending</span></td>
+                                    <td>
+                                        <div class="action-buttons">
+                                            <button class="btn btn-sm btn-outline-secondary">View Details</button>
+                                            <button class="btn btn-sm btn-danger">Remove</button>
+                                        </div>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <th scope="row">BRGY-2025-00012</th>
+                                    <td>Andres Bonifacio</td>
+                                    <td>Tondo, Manila</td>
+                                    <td>09998887777</td>
+                                    <td><span class="request-status status-declined">Declined</span></td>
+                                    <td>
+                                        <div class="action-buttons">
+                                            <button class="btn btn-sm btn-outline-secondary">View Details</button>
+                                            <button class="btn btn-sm btn-danger">Remove</button>
+                                        </div>
+                                    </td>
+                                </tr>
                             </tbody>
                         </table>
                     </div>
@@ -120,7 +151,7 @@
         </div>
     </div>
 
-    <!-- Resident Details Modal -->
+<!-- Resident Details Modal -->
     <div class="modal fade" id="residentDetailsModal" tabindex="-1" aria-labelledby="residentDetailsModalLabel" aria-hidden="true">
         <div class="modal-dialog modal-lg">
             <div class="modal-content">
