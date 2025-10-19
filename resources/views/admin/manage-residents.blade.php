@@ -25,8 +25,11 @@
         .action-buttons {
             display: flex;
             gap: 5px;
-            flex-wrap: wrap;
+            flex-wrap: nowrap; /* dati wrap */
+            justify-content: flex-start;
+            align-items: center;
         }
+
         .request-status {
             padding: 0.25em 0.6em;
             font-size: 0.75em;
@@ -43,7 +46,7 @@
     </style>
 
     <div class="main-content" id="mainContent">
-        <div class="container-fluid p-4" style="position: relative; left: -120px;">
+       <div class="container-fluid p-4" style="position: relative; left: -250px; width: calc(100% + 250px);">
             {{-- Search & Filter --}}
             <div class="card shadow-sm mb-4">
                 <div class="card-body">
@@ -89,7 +92,7 @@
                                                         data-bs-toggle="modal"
                                                         data-bs-target="#residentDetailsModal"
                                                         data-resident-id="{{ $resident->resident_id }}">
-                                                    View Details
+                                                    View
                                                 </button>
                                                 <button class="btn btn-sm btn-info text-white history-btn"
                                                         data-bs-toggle="modal"
@@ -125,8 +128,30 @@
                                     <td><span class="request-status status-pending">Pending</span></td>
                                     <td>
                                         <div class="action-buttons">
-                                            <button class="btn btn-sm btn-outline-secondary">View Details</button>
-                                            <button class="btn btn-sm btn-danger">Remove</button>
+                                            <button class="btn btn-sm btn-outline-secondary view-details-btn"
+                                                     data-bs-toggle="modal"
+                                                     data-bs-target="#residentDetailsModal"
+                                                     data-resident-id="11"
+                                                     data-resident-name="Jose Rizal"
+                                                     data-resident-status="Pending">
+                                                View
+                                            </button>
+                                            <button class="btn btn-sm btn-success action-modal-trigger"
+                                                     data-bs-toggle="modal"
+                                                     data-bs-target="#confirmationModal"
+                                                     data-action-type="approve"
+                                                     data-resident-id="11"
+                                                     data-resident-name="Jose Rizal">
+                                                Approve
+                                            </button>
+                                            <button class="btn btn-sm btn-danger action-modal-trigger"
+                                                     data-bs-toggle="modal"
+                                                     data-bs-target="#confirmationModal"
+                                                     data-action-type="decline"
+                                                     data-resident-id="11"
+                                                     data-resident-name="Jose Rizal">
+                                                Decline
+                                            </button>
                                         </div>
                                     </td>
                                 </tr>
@@ -138,8 +163,14 @@
                                     <td><span class="request-status status-declined">Declined</span></td>
                                     <td>
                                         <div class="action-buttons">
-                                            <button class="btn btn-sm btn-outline-secondary">View Details</button>
-                                            <button class="btn btn-sm btn-danger">Remove</button>
+                                            <button class="btn btn-sm btn-outline-secondary">View</button>
+                                            <button class="btn btn-sm btn-danger remove-btn"
+                                                    data-bs-toggle="modal"
+                                                    data-bs-target="#removeResidentModal"
+                                                    data-resident-id="12"
+                                                    data-resident-name="Andres Bonifacio">
+                                                Remove
+                                            </button>
                                         </div>
                                     </td>
                                 </tr>
@@ -150,43 +181,60 @@
             </div>
         </div>
     </div>
+    
 
-<!-- Resident Details Modal -->
-    <div class="modal fade" id="residentDetailsModal" tabindex="-1" aria-labelledby="residentDetailsModalLabel" aria-hidden="true">
-        <div class="modal-dialog modal-lg">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h5 class="modal-title" id="residentDetailsModalLabel">Resident Details: <span id="modal-resident-id"></span></h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+{{-- RESIDENT DETAILS MODAL --}}
+<div class="modal fade" id="residentDetailsModal" tabindex="-1" aria-labelledby="residentDetailsModalLabel" aria-hidden="true">
+    {{-- ADDED: modal-dialog-centered class --}}
+    <div class="modal-dialog modal-lg modal-dialog-centered"> 
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="residentDetailsModalLabel">Resident Details: <span id="modal-resident-id"></span></h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div class="row">
+                    <div class="col-md-6">
+                        <p><strong>Resident ID:</strong> <span id="modal-resident-id-display"></span></p>
+                        <p><strong>Name:</strong> <span id="modal-name"></span></p>
+                        <p><strong>Address:</strong> <span id="modal-address"></span></p>
+                        <p><strong>Contact #:</strong> <span id="modal-contact"></span></p>
+                        <p><strong>Email:</strong> <span id="modal-email"></span></p>
+                    </div>
+                    <div class="col-md-6">
+                        <p><strong>Date of Birth:</strong> <span id="modal-dob"></span></p>
+                        <p><strong>Gender:</strong> <span id="modal-gender"></span></p>
+                        <p><strong>Civil Status:</strong> <span id="modal-civil-status"></span></p>
+                        <p><strong>Occupation:</strong> <span id="modal-occupation"></span></p>
+                        <p><strong>Registration Date:</strong> <span id="modal-registration-date"></span></p>
+                    </div>
                 </div>
-                <div class="modal-body">
-                    <div class="row">
-                        <div class="col-md-6">
-                            <p><strong>Resident ID:</strong> <span id="modal-resident-id-display"></span></p>
-                            <p><strong>Name:</strong> <span id="modal-name"></span></p>
-                            <p><strong>Address:</strong> <span id="modal-address"></span></p>
-                            <p><strong>Contact #:</strong> <span id="modal-contact"></span></p>
-                            <p><strong>Email:</strong> <span id="modal-email"></span></p>
-                        </div>
-                        <div class="col-md-6">
-                            <p><strong>Date of Birth:</strong> <span id="modal-dob"></span></p>
-                            <p><strong>Gender:</strong> <span id="modal-gender"></span></p>
-                            <p><strong>Civil Status:</strong> <span id="modal-civil-status"></span></p>
-                            <p><strong>Occupation:</strong> <span id="modal-occupation"></span></p>
-                            <p><strong>Registration Date:</strong> <span id="modal-registration-date"></span></p>
+                <hr>
+                <div class="row">
+                    <div class="col-md-12">
+                        <h6 class="mt-2">Valid ID for Verification:</h6>
+                        <div id="modal-valid-id-image-container" class="border p-2 rounded text-center" style="min-height: 150px; background-color: #f8f9fa;">
+                            <a id="modal-valid-id-link" href="#" target="_blank" style="display: none;">
+                                <img id="modal-valid-id-image" src="" class="img-fluid rounded" style="max-height: 300px; max-width: 100%; object-fit: contain;" alt="Valid ID">
+                            </a>
+                            <div id="modal-valid-id-not-provided" class="text-muted py-5">
+                                No Valid ID provided.
+                            </div>
                         </div>
                     </div>
                 </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
-                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
             </div>
         </div>
     </div>
+</div>
+    </div>
 
-    <!-- Resident History Modal -->
+    {{-- RESIDENT HISTORY MODAL --}}
     <div class="modal fade" id="residentHistoryModal" tabindex="-1" aria-labelledby="residentHistoryModalLabel" aria-hidden="true">
-        <div class="modal-dialog modal-xl">
+        <div class="modal-dialog modal-xl modal-dialog-centered">
             <div class="modal-content">
                 <div class="modal-header">
                     <h5 class="modal-title" id="residentHistoryModalLabel">Request History for <span id="history-resident-name"></span></h5>
@@ -205,8 +253,7 @@
                                 </tr>
                             </thead>
                             <tbody id="historyTableBody">
-                                <!-- Dynamic content will be loaded here -->
-                            </tbody>
+                                </tbody>
                         </table>
                     </div>
                     <div id="no-history-message" class="text-center py-4" style="display: none;">
@@ -220,9 +267,10 @@
         </div>
     </div>
 
-    <!-- Remove Resident Modal -->
+    {{-- REMOVE RESIDENT MODAL (CONFIRMATION) --}}
     <div class="modal fade" id="removeResidentModal" tabindex="-1" aria-labelledby="removeResidentModalLabel" aria-hidden="true">
-        <div class="modal-dialog">
+        {{-- ADDED: modal-dialog-centered class --}}
+        <div class="modal-dialog modal-dialog-centered"> 
             <div class="modal-content">
                 <div class="modal-header">
                     <h5 class="modal-title" id="removeResidentModalLabel">Remove Resident</h5>
@@ -247,17 +295,49 @@
             </div>
         </div>
     </div>
+    
+    {{-- APPROVE/DECLINE CONFIRMATION MODAL --}}
+    <div class="modal fade" id="confirmationModal" tabindex="-1" aria-labelledby="confirmationModalLabel" aria-hidden="true">
+        {{-- ADDED: modal-dialog-centered class --}}
+        <div class="modal-dialog modal-dialog-centered"> 
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="confirmationModalLabel">Confirmation</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <p id="confirmationMessage"></p>
+                    <div class="mb-3" id="declineReasonGroup" style="display:none;">
+                        <label for="declineReason" class="form-label">Reason for Declining (Required)</label>
+                        <textarea class="form-control" id="declineReason" rows="3"></textarea>
+                        <div class="text-danger mt-1" id="reasonError" style="display:none;">Reason is required to decline.</div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="button" class="btn" id="confirmActionButton">Confirm</button>
+                </div>
+            </div>
+        </div>
+    </div>
 
     <script>
         document.addEventListener('DOMContentLoaded', function() {
             let currentResidentId = null;
+            let currentActionType = null; 
 
-            // Search functionality
+            // Utility function to format ID (needed in client-side simulation)
+            function formatIdClient(id) {
+                const currentYear = new Date().getFullYear();
+                const paddedId = String(id).padStart(5, '0');
+                return `BRGY-${currentYear}-${paddedId}`;
+            }
+
+            // Search & Filter functions
             const searchBar = document.getElementById('searchBar');
             const applyFiltersBtn = document.getElementById('applyFilters');
             const resetButton = document.getElementById('resetFilters');
             
-            // Apply filters when button is clicked
             if (applyFiltersBtn) {
                 applyFiltersBtn.addEventListener('click', function() {
                     const searchTerm = searchBar ? searchBar.value.toLowerCase() : '';
@@ -265,7 +345,6 @@
                 });
             }
 
-            // Auto-search as user types (optional - you can remove this if you only want button click)
             if (searchBar) {
                 searchBar.addEventListener('input', function() {
                     const searchTerm = this.value.toLowerCase();
@@ -287,7 +366,7 @@
                 let hasVisibleRows = false;
 
                 rows.forEach(row => {
-                    if (row.cells.length < 4) return; // Skip empty rows
+                    if (row.cells.length < 4) return;
                     
                     const name = row.cells[1].textContent.toLowerCase();
                     const address = row.cells[2].textContent.toLowerCase();
@@ -301,18 +380,109 @@
                     }
                 });
 
-                // Show no results message if needed
                 const noResultsRow = document.querySelector('#residentsTableBody .no-results');
                 if (!hasVisibleRows && !noResultsRow) {
                     const tbody = document.getElementById('residentsTableBody');
                     const newRow = document.createElement('tr');
                     newRow.className = 'no-results';
-                    newRow.innerHTML = '<td colspan="5" class="text-center py-4"><div class="text-muted">No residents match your search.</div></td>';
+                    newRow.innerHTML = '<td colspan="6" class="text-center py-4"><div class="text-muted">No residents match your search.</div></td>';
                     tbody.appendChild(newRow);
                 } else if (hasVisibleRows && noResultsRow) {
                     noResultsRow.remove();
                 }
             }
+            
+            // Logic para sa Approve/Decline Modal Trigger
+            document.querySelectorAll('.action-modal-trigger').forEach(button => {
+                button.addEventListener('click', function() {
+                    const residentId = this.dataset.residentId;
+                    const residentName = this.dataset.residentName;
+                    const actionType = this.dataset.actionType;
+                    const formattedId = formatIdClient(residentId);
+
+                    currentResidentId = residentId;
+                    currentActionType = actionType;
+                    
+                    const actionDisplay = actionType.charAt(0).toUpperCase() + actionType.slice(1);
+                    const confirmActionButton = document.getElementById('confirmActionButton');
+                    const confirmationMessage = document.getElementById('confirmationMessage');
+                    const declineReasonGroup = document.getElementById('declineReasonGroup');
+                    const declineReason = document.getElementById('declineReason');
+                    const reasonError = document.getElementById('reasonError');
+
+                    // Reset state
+                    declineReason.value = '';
+                    declineReasonGroup.style.display = 'none';
+                    reasonError.style.display = 'none';
+
+                    // Set modal content
+                    confirmationMessage.innerHTML = `Are you sure you want to **${actionDisplay.toUpperCase()}** the registration for **${residentName}** (${formattedId})?`;
+                    
+                    if (actionType === 'approve') {
+                        confirmActionButton.textContent = 'Confirm Approval';
+                        confirmActionButton.className = 'btn btn-success';
+                        confirmActionButton.disabled = false;
+                    } else if (actionType === 'decline') {
+                        confirmActionButton.textContent = 'Confirm Decline';
+                        confirmActionButton.className = 'btn btn-danger';
+                        declineReasonGroup.style.display = 'block';
+                        confirmActionButton.disabled = true; // Disable until reason is provided
+                    }
+                });
+            });
+
+            // Logic para sa Decline reason check
+            const declineReason = document.getElementById('declineReason');
+            const confirmActionButton = document.getElementById('confirmActionButton');
+
+            if (declineReason && confirmActionButton) {
+                declineReason.addEventListener('input', function() {
+                    if (currentActionType === 'decline') {
+                        const isFilled = this.value.trim().length > 0;
+                        confirmActionButton.disabled = !isFilled;
+                        document.getElementById('reasonError').style.display = isFilled ? 'none' : 'block';
+                    }
+                });
+            }
+
+            // Logic para sa Confirmation Action
+            if (confirmActionButton) {
+                confirmActionButton.addEventListener('click', async function() {
+                    const actionType = currentActionType;
+                    const residentId = currentResidentId;
+                    const rowElement = document.querySelector(`tr[data-resident-id="${residentId}"]`) || document.querySelector(`[data-resident-id="${residentId}"]`).closest('tr');
+                    const residentNameCell = rowElement ? rowElement.cells[1].textContent : 'Resident';
+                    const declineReason = document.getElementById('declineReason');
+                    const reason = actionType === 'decline' ? declineReason.value.trim() : null;
+                    const reasonError = document.getElementById('reasonError');
+
+                    // Check for decline reason validity
+                    if (actionType === 'decline' && reason.length === 0) {
+                        reasonError.style.display = 'block';
+                        return;
+                    } else {
+                        reasonError.style.display = 'none';
+                    }
+
+                    // Show loading state
+                    const originalText = this.textContent;
+                    this.innerHTML = '<span class="spinner-border spinner-border-sm"></span> Processing...';
+                    this.disabled = true;
+
+                    // Close the modal
+                    const modal = bootstrap.Modal.getInstance(document.getElementById('confirmationModal'));
+                    modal.hide();
+
+                    // Simulate a successful API call delay (Replace with actual fetch/axios)
+                    await new Promise(resolve => setTimeout(resolve, 1000));
+                    
+                    alert(`SUCCESS: Registration for ${residentNameCell} has been ${actionType}d. (Simulation) ${actionType === 'decline' ? 'Reason: ' + reason : ''}`);
+                    
+                    // Since this is a simulation, we'll reload to fake the state change
+                    location.reload(); 
+                });
+            }
+
 
             // View Details Modal
             document.querySelectorAll('.view-details-btn').forEach(button => {
@@ -335,7 +505,6 @@
                 });
             });
 
-            // Remove Modal
             document.querySelectorAll('.remove-btn').forEach(button => {
                 button.addEventListener('click', function() {
                     const residentId = this.dataset.residentId;
@@ -350,7 +519,7 @@
                 });
             });
 
-            // Load resident details
+            // Load resident details (Uses the original function structure, assuming it's for the dynamic rows)
             async function loadResidentDetails(residentId) {
                 try {
                     const response = await fetch(`/admin/residents/${residentId}/details`);
@@ -359,7 +528,6 @@
                     if (data.success) {
                         const resident = data.resident;
                         
-                        // Format the ID as BRGY-2025-00001
                         const formattedId = 'BRGY-' + new Date().getFullYear() + '-' + String(residentId).padStart(5, '0');
                         
                         document.getElementById('modal-resident-id').textContent = formattedId;
@@ -379,7 +547,6 @@
                 }
             }
 
-            // Load resident history
             async function loadResidentHistory(residentId) {
                 try {
                     console.log('Loading history for resident:', residentId);
@@ -406,7 +573,6 @@
                             const statusClass = 'status-' + request.status.replace(' ', '-');
                             const statusDisplay = request.status.charAt(0).toUpperCase() + request.status.slice(1);
                             
-                            // Format request ID as BRGY-2025-00001
                             const formattedRequestId = 'BRGY-' + new Date().getFullYear() + '-' + String(request.request_id).padStart(5, '0');
                             
                             row.innerHTML = `
@@ -436,7 +602,6 @@
                 }
             }
 
-            // Remove confirmation checkbox
             const confirmCheckbox = document.getElementById('confirmRemove');
             const removeButton = document.getElementById('removeButton');
             
@@ -446,7 +611,6 @@
                 });
             }
 
-            // Remove resident
             if (removeButton) {
                 removeButton.addEventListener('click', async function() {
                     if (!currentResidentId) return;

@@ -27,7 +27,7 @@
     </style>
 
     <div class="main-content" id="mainContent">
-        <div class="container-fluid p-4" style="position: relative; left: -120px;">
+        <div class="container-fluid p-4" style="position: relative; left: -250px; width: calc(100% + 250px);"> 
             
             <!-- Export & Filter -->
             <div class="d-flex justify-content-end ms-auto mb-3">

@@ -56,7 +56,7 @@
     </style>
 
     <div class="main-content" id="mainContent">
-        <div class="container-fluid p-4" style="position: relative; left: -120px;">
+        <div class="container-fluid p-4" style="position: relative; left: -250px; width: calc(100% + 250px);"> 
             {{-- Filter Card --}}
             <div class="card shadow-sm mb-4">
                 <div class="card-body">
@@ -132,29 +132,42 @@
                                             <span class="request-status {{ $statusClass }}">{{ $statusDisplay }}</span>
                                         </td>
                                         <td>
-                                            @if(in_array($request->status, ['pending', 'under-review', 'waiting-payment', 'processing']))
-                                                <button class="btn btn-sm btn-primary btn-custom-size process-action-btn" 
-                                                        data-bs-toggle="modal" 
-                                                        data-bs-target="#processModal" 
-                                                        data-action-type="{{ $request->status }}"
+                                            <div class="d-flex align-items-center gap-2">
+                                                @if(in_array($request->status, ['pending', 'under-review', 'waiting-payment', 'processing']))
+                                                    <button class="btn btn-sm btn-primary btn-custom-size process-action-btn" 
+                                                            data-bs-toggle="modal" 
+                                                            data-bs-target="#processModal" 
+                                                            data-action-type="{{ $request->status }}"
+                                                            data-request-id="{{ $request->request_id }}"
+                                                            data-formatted-id="{{ formatRequestId($request->request_id) }}">
+                                                        @if($request->status == 'waiting-payment')
+                                                            Confirm Payment
+                                                        @else
+                                                            Process
+                                                        @endif
+                                                    </button>
+                                                @else
+                                                    <button class="btn btn-sm btn-outline-secondary btn-custom-size view-details-btn" 
+                                                            data-bs-toggle="modal" 
+                                                            data-bs-target="#detailsModal"
+                                                            data-request-id="{{ $request->request_id }}"
+                                                            data-formatted-id="{{ formatRequestId($request->request_id) }}">
+                                                        View
+                                                    </button>
+                                                @endif
+
+                                                {{-- New History Button --}}
+                                                <button class="btn btn-sm btn-info btn-custom-size text-white history-btn"
+                                                        data-bs-toggle="modal"
+                                                        data-bs-target="#historyModal"
                                                         data-request-id="{{ $request->request_id }}"
                                                         data-formatted-id="{{ formatRequestId($request->request_id) }}">
-                                                    @if($request->status == 'waiting-payment')
-                                                        Confirm Payment
-                                                    @else
-                                                        Process
-                                                    @endif
+                                                    History
                                                 </button>
-                                            @else
-                                                <button class="btn btn-sm btn-outline-secondary btn-custom-size view-details-btn" 
-                                                        data-bs-toggle="modal" 
-                                                        data-bs-target="#detailsModal"
-                                                        data-request-id="{{ $request->request_id }}"
-                                                        data-formatted-id="{{ formatRequestId($request->request_id) }}">
-                                                    View
-                                                </button>
-                                            @endif
+                                            </div>
                                         </td>
+
+
                                     </tr>
                                 @empty
                                     <tr>
@@ -286,6 +299,38 @@
             </div>
         </div>
     </div>
+
+        {{-- History Modal --}}
+    <div class="modal fade" id="historyModal" tabindex="-1" aria-labelledby="historyModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-lg modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Transaction History: <span id="history-modal-request-id"></span></h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div id="history-content" class="table-responsive">
+                        <table class="table table-bordered table-hover">
+                            <thead class="table-primary">
+                                <tr>
+                                    <th>Date</th>
+                                    <th>Action</th>
+                                    <th>Remarks</th>
+                                </tr>
+                            </thead>
+                            <tbody id="history-tbody">
+                                <tr><td colspan="4" class="text-center text-muted py-3">Loading...</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
 
     {{-- INLINE JAVASCRIPT --}}
     <script>
@@ -688,8 +733,49 @@
                 }
             };
 
+            // Handle History button click
+            document.addEventListener('click', async function(e) {
+                if (e.target.closest('.history-btn')) {
+                    const button = e.target.closest('.history-btn');
+                    const requestId = button.dataset.requestId;
+                    const formattedId = button.dataset.formattedId;
+
+                    // Set modal header
+                    document.getElementById('history-modal-request-id').textContent = formattedId;
+
+                    // Show loading message
+                    const tbody = document.getElementById('history-tbody');
+                    tbody.innerHTML = `<tr><td colspan="4" class="text-center text-muted py-3">Loading...</td></tr>`;
+
+                    try {
+                        // Fetch history data (adjust URL to match your route)
+                        const response = await fetch(`/admin/requests/${requestId}/history`);
+                        const data = await response.json();
+
+                        if (data.success && data.history.length > 0) {
+                            tbody.innerHTML = '';
+                            data.history.forEach(item => {
+                                tbody.innerHTML += `
+                                    <tr>
+                                        <td>${new Date(item.date).toLocaleString()}</td>
+                                        <td>${item.action}</td>
+                                        <td>${item.remarks || '-'}</td>
+                                    </tr>
+                                `;
+                            });
+                        } else {
+                            tbody.innerHTML = `<tr><td colspan="4" class="text-center text-muted py-3">No history found.</td></tr>`;
+                        }
+                    } catch (error) {
+                        console.error(error);
+                        tbody.innerHTML = `<tr><td colspan="4" class="text-center text-danger py-3">Failed to load history.</td></tr>`;
+                    }
+                }
+            });
+
+
             // Initial attachment of event listeners
             attachEventListeners();
         });
-    </script>
+            </script>
 </x-admin-layout>
