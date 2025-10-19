@@ -82,6 +82,102 @@
             max-height: 200px;
             margin-bottom: 1rem;
         }
+.flatpickr-calendar {
+    /* Main container style */
+    width: 320px !important; /* A bit smaller, 400px is very wide, but keep it if you prefer */
+    font-family: "Poppins", sans-serif;
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
+    border-radius: 16px;
+    overflow: hidden;
+    border: none;
+    z-index: 1050; /* Ensure it's above other elements like modals */
+}
+
+/* Fix Positioning: Remove the custom centering, let flatpickr handle placement */
+/* REMOVED: .flatpickr-calendar.open { left: 50% !important; transform: translateX(-50%) !important; } */
+
+/* Header Section (Month and Year) */
+.flatpickr-months {
+    background: linear-gradient(135deg, #0d6efd, #4e9eff);
+    color: white;
+    padding: 10px 0;
+    border-bottom: 2px solid #dee2e6;
+}
+
+.flatpickr-month,
+.flatpickr-current-month {
+    font-size: 1.2rem;
+    font-weight: 600;
+}
+
+/* Arrows */
+.flatpickr-prev-month,
+.flatpickr-next-month {
+    color: white;
+    padding: 8px;
+    transition: 0.3s;
+    border-radius: 50%; /* Apply hover style to button */
+}
+.flatpickr-prev-month:hover,
+.flatpickr-next-month:hover {
+    background-color: rgba(255, 255, 255, 0.2);
+}
+
+/* Weekday Header */
+.flatpickr-weekdays {
+    background-color: #f8f9fa;
+    color: #6c757d;
+    font-weight: 600;
+}
+.flatpickr-weekday {
+    font-size: 1rem;
+    height: 40px;
+    line-height: 40px;
+}
+
+/* Day Cells */
+.flatpickr-day {
+    font-size: 1rem;
+    height: 38px;
+    line-height: 38px;
+    border-radius: 8px;
+    transition: all 0.2s ease;
+    margin: 3px 0; /* Add slight vertical spacing */
+}
+
+/* Hover effect */
+.flatpickr-day:hover {
+    background-color: #0d6efd;
+    color: white;
+}
+
+/* Selected Day */
+.flatpickr-day.selected,
+.flatpickr-day.startRange,
+.flatpickr-day.endRange { /* Added range styles for completeness */
+    background-color: #198754 !important; /* Green */
+    color: white !important;
+    font-weight: bold;
+    border-color: #198754 !important;
+}
+
+/* Today Indicator */
+.flatpickr-day.today {
+    border: 1px solid #0d6efd !important; /* Changed from 2px to 1px */
+    font-weight: 600;
+}
+
+/* Disable unwanted calendar styles */
+.flatpickr-day.disabled, .flatpickr-day.prevMonthDay, .flatpickr-day.nextMonthDay {
+    opacity: 0.6;
+}
+
+/* Mobile Responsiveness - KEEP THIS ONE INSTEAD OF THE EMPTY ONE */
+@media (max-width: 576px) {
+    .flatpickr-calendar {
+        width: 95% !important; /* Use almost full width on small screens */
+    }
+}
         @media (max-width: 768px) {
             .step-progress {
                 flex-direction: column;
@@ -100,6 +196,9 @@
             .step-number {
                 margin: 0 1rem 0 0;
             }
+            .flatpickr-calendar {
+        width: 90% !important;
+    }
         }
     </style>
 
@@ -234,26 +333,36 @@
             </div>
         </div>
 
-        <!-- Step 2: Service Details -->
+       <!-- Step 2: Service Details -->
         <div class="card border-0 shadow mb-4" id="step2-content" style="display: none;">
             <div class="card-body">
                 <h5 class="card-title">Service Details</h5>
-                <p class="text-muted mb-4">Please provide the necessary details for your <span id="selected-service-name">selected service</span>.</p>
+                <p class="text-muted mb-4">
+                    Please provide the necessary details for your 
+                    <span id="selected-service-name">selected service</span>.
+                </p>
 
                 <div class="row">
                     <div class="col-md-12 mb-3">
-                        <label for="purpose" class="form-label">Purpose of Request <span class="text-danger">*</span></label>
+                        <label for="purpose" class="form-label">Purpose of Request 
+                            <span class="text-danger">*</span>
+                        </label>
                         <textarea class="form-control" id="purpose" rows="3" placeholder="Please specify the purpose of this document..."></textarea>
                     </div>
                 </div>
 
-                <div id="additional-fields">
+                <!-- Dynamic Fields (2-column layout) -->
+                <div id="additional-fields" class="row g-3">
                     <!-- Dynamic fields will be inserted here based on service selection -->
                 </div>
 
                 <div class="d-flex justify-content-between mt-4">
-                    <button class="btn btn-secondary" id="backToStep1"><i class="bi bi-arrow-left"></i> Back</button>
-                    <button class="btn btn-primary" id="nextToStep3">Next <i class="bi bi-arrow-right"></i></button>
+                    <button class="btn btn-secondary" id="backToStep1">
+                        <i class="bi bi-arrow-left"></i> Back
+                    </button>
+                    <button class="btn btn-primary" id="nextToStep3">
+                        Next <i class="bi bi-arrow-right"></i>
+                    </button>
                 </div>
             </div>
         </div>
@@ -336,6 +445,8 @@
         </div>
     </div>
 
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
+<script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
     <script>
         document.addEventListener('DOMContentLoaded', function() {
             // Current step tracking
@@ -353,8 +464,7 @@
                         </div>
                         <div class="col-md-6 mb-3">
                             <label for="clearance-date" class="form-label">Needed By</label>
-                            <input type="date" class="form-control" id="clearance-date">
-                        </div>
+                            <input type="text" class="form-control" id="clearance-date" placeholder="YYYY-MM-DD">                        </div>
                     `,
                     documents: [
                         { name: "Valid ID", required: true },
@@ -371,8 +481,7 @@
                         </div>
                         <div class="col-md-6 mb-3">
                             <label for="residency-date" class="form-label">Needed By</label>
-                            <input type="date" class="form-control" id="residency-date">
-                        </div>
+<input type="text" class="form-control" id="residency-date" placeholder="YYYY-MM-DD">                        </div>
                     `,
                     documents: [
                         { name: "Valid ID", required: true },
@@ -432,8 +541,7 @@
                     fields: `
                         <div class="col-md-6 mb-3">
                             <label for="id-date" class="form-label">Needed By</label>
-                            <input type="date" class="form-control" id="id-date">
-                        </div>
+<input type="text" class="form-control" id="id-date" placeholder="YYYY-MM-DD">                        </div>
                     `,
                     documents: [
                         { name: "Valid ID", required: true },
@@ -511,22 +619,26 @@
 
                 // Generate document requirements
                 const documentsContainer = document.getElementById('required-documents');
-                let documentsHTML = '';
+let documentsHTML = '<div class="row g-3">';
 
-                serviceDetails[selectedService].documents.forEach((doc, index) => {
-                    documentsHTML += `
-                        <div class="mb-4">
-                            <label class="form-label">${doc.name} ${doc.required ? '<span class="text-danger">*</span>' : ''}</label>
-                            <div class="input-group">
-                                <input type="file" class="form-control" id="doc-${index}" ${doc.required ? 'required' : ''}>
-                                <button class="btn btn-outline-secondary" type="button" onclick="document.getElementById('doc-${index}').value=''">Clear</button>
-                            </div>
-                            <div class="form-text">${doc.required ? 'Required document' : 'Optional document'}</div>
-                        </div>
-                    `;
-                });
+serviceDetails[selectedService].documents.forEach((doc, index) => {
+    documentsHTML += `
+        <div class="col-md-6">
+            <div class="mb-3">
+                <label class="form-label">${doc.name} ${doc.required ? '<span class="text-danger">*</span>' : ''}</label>
+                <div class="input-group">
+                    <input type="file" class="form-control" id="doc-${index}" ${doc.required ? 'required' : ''}>
+                    <button class="btn btn-outline-secondary" type="button" onclick="document.getElementById('doc-${index}').value=''">Clear</button>
+                </div>
+                <div class="form-text">${doc.required ? 'Required document' : 'Optional document'}</div>
+            </div>
+        </div>
+    `;
+});
 
-                documentsContainer.innerHTML = documentsHTML;
+documentsHTML += '</div>'; // close row
+documentsContainer.innerHTML = documentsHTML;
+
             });
 
             document.getElementById('backToStep2').addEventListener('click', function() {
@@ -761,5 +873,25 @@ function generateReviewSummary() {
     summaryContainer.innerHTML = summaryHTML;
 }
         });
+
+        // Initialize Flatpickr calendar on needed-by fields when inserted
+document.addEventListener('click', function(e) {
+    // Check if the clicked element is a Needed By input
+    if (e.target && e.target.matches('input[id$="-date"]')) {
+        // If not already initialized, activate flatpickr
+        if (!e.target._flatpickr) {
+            flatpickr(e.target, {
+                dateFormat: "Y-m-d",
+                minDate: "today",
+                allowInput: true,
+            });
+        }
+        // Open the calendar immediately
+        e.target._flatpickr.open();
+    }
+});
+
+
+        
     </script>
 </x-resident-layout>
