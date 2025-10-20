@@ -114,8 +114,14 @@
                             </thead>
                             <tbody id="requestsTableBody">
                                 @forelse($requests as $request)
-                                    <tr data-request-id="{{ $request->request_id }}" data-status="{{ $request->status }}">
-                                        <th scope="row">{{ formatRequestId($request->request_id) }}</th>
+                                        <tr data-request-id="{{ $request->request_id }}" 
+                                        data-status="{{ $request->status }}"
+                                        data-submitted-date="{{ \Carbon\Carbon::parse($request->submitted_date ?? $request->request_date)->format('M j, Y g:i A') }}"
+                                        data-approved-date="{{ $request->approved_date ? \Carbon\Carbon::parse($request->approved_date)->format('M j, Y g:i A') : '' }}"
+                                        data-processing-date="{{ $request->processing_date ? \Carbon\Carbon::parse($request->processing_date)->format('M j, Y g:i A') : '' }}"
+                                        data-completed-date="{{ $request->completed_date ? \Carbon\Carbon::parse($request->completed_date)->format('M j, Y g:i A') : '' }}"
+                                        data-declined-date="{{ $request->declined_date ? \Carbon\Carbon::parse($request->declined_date)->format('M j, Y g:i A') : '' }}">
+                                                                        <th scope="row">{{ formatRequestId($request->request_id) }}</th>
                                         <td>{{ $request->resident->first_name }} {{ $request->resident->last_name }}</td>
                                         <td>{{ $request->request_type }}</td>
                                         <td>
@@ -133,14 +139,14 @@
                                         </td>
                                         <td>
                                             <div class="d-flex align-items-center gap-2">
-                                                @if(in_array($request->status, ['pending', 'under-review', 'waiting-payment', 'processing']))
+                                                @if(in_array($request->status, ['pending', 'under-review', 'approved', 'processing']))
                                                     <button class="btn btn-sm btn-primary btn-custom-size process-action-btn" 
                                                             data-bs-toggle="modal" 
                                                             data-bs-target="#processModal" 
                                                             data-action-type="{{ $request->status }}"
                                                             data-request-id="{{ $request->request_id }}"
                                                             data-formatted-id="{{ formatRequestId($request->request_id) }}">
-                                                        @if($request->status == 'waiting-payment')
+                                                        @if($request->status == 'approved')
                                                             Confirm Payment
                                                         @else
                                                             Process
@@ -485,8 +491,8 @@
                                 </div>`;
                             actionButtons.innerHTML = `
                                 <button type="button" class="btn btn-danger btn-custom-size" onclick="updateRequestStatus(${requestId}, 'declined')">Decline</button>
-                                <button type="button" class="btn btn-success btn-custom-size" onclick="updateRequestStatus(${requestId}, 'waiting-payment')">Approve</button>`;
-                        } else if (actionType === 'waiting-payment') {
+                                <button type="button" class="btn btn-success btn-custom-size" onclick="updateRequestStatus(${requestId}, 'approved')">Approve</button>`;
+                        } else if (actionType === 'approved') {
                             dynamicContent.innerHTML = `
                                 <p class="text-center">Are you sure you want to confirm payment for this request?</p>`;
                             actionButtons.innerHTML = `
@@ -698,7 +704,7 @@
                     let remarks = '';
                     if (newStatus === 'declined') {
                         remarks = document.getElementById('adminComment')?.value || 'Request declined.';
-                    } else if (newStatus === 'waiting-payment') {
+                    } else if (newStatus === 'approved') {
                         const fee = document.getElementById('processingFee')?.value || '50';
                         remarks = `Approved. Processing fee: ₱${fee}. Waiting for payment.`;
                     } else if (newStatus === 'completed') {
@@ -733,45 +739,111 @@
                 }
             };
 
-            // Handle History button click
+            // Handle History button click - FOR ADMIN (TABLE VIEW)
             document.addEventListener('click', async function(e) {
                 if (e.target.closest('.history-btn')) {
                     const button = e.target.closest('.history-btn');
+                    const row = button.closest('tr');
                     const requestId = button.dataset.requestId;
                     const formattedId = button.dataset.formattedId;
+
+                    // Get the date attributes from the table row
+                    const submittedDate = row.getAttribute('data-submitted-date');
+                    const approvedDate = row.getAttribute('data-approved-date');
+                    const processingDate = row.getAttribute('data-processing-date');
+                    const completedDate = row.getAttribute('data-completed-date');
+                    const declinedDate = row.getAttribute('data-declined-date');
+                    const currentStatus = row.getAttribute('data-status');
 
                     // Set modal header
                     document.getElementById('history-modal-request-id').textContent = formattedId;
 
                     // Show loading message
                     const tbody = document.getElementById('history-tbody');
-                    tbody.innerHTML = `<tr><td colspan="4" class="text-center text-muted py-3">Loading...</td></tr>`;
+                    tbody.innerHTML = `<tr><td colspan="3" class="text-center text-muted py-3">Loading...</td></tr>`;
 
                     try {
-                        // Fetch history data (adjust URL to match your route)
-                        const response = await fetch(`/admin/requests/${requestId}/history`);
-                        const data = await response.json();
+                        // Generate history using real dates
+                        const history = generateRealHistory(
+                            submittedDate, 
+                            approvedDate,
+                            processingDate, 
+                            completedDate, 
+                            declinedDate, 
+                            currentStatus
+                        );
 
-                        if (data.success && data.history.length > 0) {
-                            tbody.innerHTML = '';
-                            data.history.forEach(item => {
+                        tbody.innerHTML = '';
+                        
+                        if (history.length > 0) {
+                            history.forEach(item => {
                                 tbody.innerHTML += `
                                     <tr>
-                                        <td>${new Date(item.date).toLocaleString()}</td>
-                                        <td>${item.action}</td>
+                                        <td>${item.date}</td>
+                                        <td>${item.title}</td>
                                         <td>${item.remarks || '-'}</td>
                                     </tr>
                                 `;
                             });
                         } else {
-                            tbody.innerHTML = `<tr><td colspan="4" class="text-center text-muted py-3">No history found.</td></tr>`;
+                            tbody.innerHTML = `<tr><td colspan="3" class="text-center text-muted py-3">No history found.</td></tr>`;
                         }
                     } catch (error) {
                         console.error(error);
-                        tbody.innerHTML = `<tr><td colspan="4" class="text-center text-danger py-3">Failed to load history.</td></tr>`;
+                        tbody.innerHTML = `<tr><td colspan="3" class="text-center text-danger py-3">Failed to load history.</td></tr>`;
                     }
                 }
             });
+
+            // Real History Data Generation Function - FOR ADMIN (TABLE VIEW)
+            function generateRealHistory(submittedDate, approvedDate, processingDate, completedDate, declinedDate, currentStatus) {
+                const history = [];
+                
+                // Always show submitted
+                history.push({
+                    title: 'Submitted',
+                    date: submittedDate,
+                    remarks: 'Request submitted by resident'
+                });
+
+                // Show approved if date exists
+                if (approvedDate) {
+                    history.push({
+                        title: 'Approved',
+                        date: approvedDate,
+                        remarks: 'Request approved for processing'
+                    });
+                }
+
+                // Show processing if date exists
+                if (processingDate) {
+                    history.push({
+                        title: 'Processing',
+                        date: processingDate,
+                        remarks: 'Request is being processed'
+                    });
+                }
+
+                // Show completed if date exists
+                if (completedDate) {
+                    history.push({
+                        title: 'Completed',
+                        date: completedDate,
+                        remarks: 'Request completed and ready'
+                    });
+                }
+
+                // Show declined if date exists
+                if (declinedDate) {
+                    history.push({
+                        title: 'Declined',
+                        date: declinedDate,
+                        remarks: 'Request was declined'
+                    });
+                }
+
+                return history;
+            }
 
 
             // Initial attachment of event listeners

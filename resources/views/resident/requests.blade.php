@@ -114,6 +114,9 @@
         .timeline-item.active .timeline-item-icon {
             background-color: #28a745; /* Success color for active */
         }
+        .timeline-item.declined .timeline-item-icon {
+            background-color: #dc3545; /* Danger color for declined */
+        }
         .timeline-item-date {
             display: block;
             font-size: 0.85em;
@@ -180,12 +183,15 @@
                         </thead>
                         <tbody>
                             @foreach($requests as $request)
-                                <tr data-request-id="{{ $request->request_id }}" 
+                                    <tr data-request-id="{{ $request->request_id }}" 
                                     data-status="{{ $request->status }}"
                                     data-request-type="{{ $request->request_type }}"
-                                    data-request-date="{{ $request->request_date }}"
-                                    data-updated-at="{{ $request->updated_at }}"
-                                    data-remarks="{{ $request->remarks }}">
+                                    data-submitted-date="{{ \Carbon\Carbon::parse($request->submitted_date ?? $request->request_date)->format('M j, Y g:i A') }}"
+                                    data-approved-date="{{ $request->approved_date ? \Carbon\Carbon::parse($request->approved_date)->format('M j, Y g:i A') : '' }}"
+                                    data-processing-date="{{ $request->processing_date ? \Carbon\Carbon::parse($request->processing_date)->format('M j, Y g:i A') : '' }}"
+                                    data-completed-date="{{ $request->completed_date ? \Carbon\Carbon::parse($request->completed_date)->format('M j, Y g:i A') : '' }}"
+                                    data-declined-date="{{ $request->declined_date ? \Carbon\Carbon::parse($request->declined_date)->format('M j, Y g:i A') : '' }}"
+                                    data-current-status="{{ $request->status }}">
                                     
                                     <td>{{ formatRequestId($request->request_id) }}</td>
                                     <td>{{ $serviceMapping[$request->request_type] ?? $request->request_type }}</td>
@@ -201,7 +207,6 @@
                                                 data-bs-toggle="modal" 
                                                 data-bs-target="#historyModal"
                                                 data-request-id="{{ formatRequestId($request->request_id) }}"
-                                                data-submitted-date="{{ \Carbon\Carbon::parse($request->request_date)->format('M j, Y g:i A') }}"
                                                 data-current-status="{{ $request->status }}">
                                              History
                                         </button>
@@ -248,81 +253,60 @@
         </div>
     </div>
     <script>
-        // --- Mock History Data Generation Function (Frontend Simulation) ---
-        function generateMockHistory(submittedDate, currentStatus) {
-            const history = [];
-            // Map the user-friendly names to the database status keys
-            const statuses = [
-                { key: 'pending', title: 'Submitted', iconClass: 'bi-file-earmark-check', isFinal: false, date: submittedDate },
-                { key: 'approved', title: 'Approved', iconClass: 'bi-check-circle', isFinal: false, date: null }, 
-                { key: 'processing', title: 'Processing', iconClass: 'bi-gear', isFinal: false, date: null },
-                { key: 'completed', title: 'Complete', iconClass: 'bi-trophy', isFinal: true, date: null },
-            ];
+    // Real History Data Generation Function
+function generateRealHistory(submittedDate, approvedDate, processingDate, completedDate, declinedDate, currentStatus) {
+    const history = [];
+    
+    // Always show submitted
+    history.push({
+        title: 'Submitted',
+        date: submittedDate,
+        isActive: currentStatus === 'pending',
+        isDeclined: false
+    });
 
-            let mockDate = new Date(submittedDate); // Start from submitted date
+    // Show approved if date exists
+    if (approvedDate) {
+        history.push({
+            title: 'Approved',
+            date: approvedDate,
+            isActive: currentStatus === 'approved',
+            isDeclined: false
+        });
+    }
 
-            for (const statusItem of statuses) {
-                // Determine if this status step has been reached
-                let hasReached = false;
-                
-                if (statusItem.key === 'pending') {
-                    hasReached = true;
-                } else if (statusItem.key === 'approved') {
-                    // Approved must happen before Processing or Completed
-                    if (currentStatus !== 'pending' && currentStatus !== 'declined') {
-                        hasReached = true;
-                        mockDate.setMinutes(mockDate.getMinutes() + 15); // Mock 15 mins later
-                        statusItem.date = mockDate.toLocaleString('en-US', { month: 'short', day: 'numeric', year: 'numeric', hour: 'numeric', minute: '2-digit', hour12: true });
-                    }
-                } else if (statusItem.key === 'processing' && (currentStatus === 'processing' || currentStatus === 'completed')) {
-                    hasReached = true;
-                    mockDate.setHours(mockDate.getHours() + 1); // Mock 1 hour later
-                    statusItem.date = mockDate.toLocaleString('en-US', { month: 'short', day: 'numeric', year: 'numeric', hour: 'numeric', minute: '2-digit', hour12: true });
-                } else if (statusItem.key === 'completed' && currentStatus === 'completed') {
-                    hasReached = true;
-                    mockDate.setHours(mockDate.getHours() + 2); // Mock 2 hours later
-                    statusItem.date = mockDate.toLocaleString('en-US', { month: 'short', day: 'numeric', year: 'numeric', hour: 'numeric', minute: '2-digit', hour12: true });
-                }
+    // Show processing if date exists
+    if (processingDate) {
+        history.push({
+            title: 'Processing',
+            date: processingDate,
+            isActive: currentStatus === 'processing',
+            isDeclined: false
+        });
+    }
 
-                if (hasReached) {
-                    history.push({
-                        title: statusItem.title,
-                        date: statusItem.date,
-                        isActive: statusItem.key === currentStatus || (statusItem.key === 'approved' && (currentStatus === 'processing' || currentStatus === 'completed')),
-                        iconClass: statusItem.iconClass,
-                        isDeclined: false
-                    });
-                }
-                
-                // If the current status is reached, stop the loop (unless it's 'approved', which is an intermediate step)
-                if (statusItem.key === currentStatus) {
-                    break;
-                }
-            }
-            
-            // Add 'Declined' if the current status is declined
-            if (currentStatus === 'declined') {
-                mockDate.setMinutes(new Date(submittedDate).getMinutes() + 15);
-                history.push({
-                    title: 'Submitted',
-                    date: submittedDate,
-                    isActive: false,
-                    iconClass: 'bi-file-earmark-check',
-                    isDeclined: false
-                });
-                history.push({
-                    title: 'Declined',
-                    date: mockDate.toLocaleString('en-US', { month: 'short', day: 'numeric', year: 'numeric', hour: 'numeric', minute: '2-digit', hour12: true }),
-                    isActive: true,
-                    iconClass: 'bi-x-circle',
-                    isDeclined: true
-                });
-            }
+    // Show completed if date exists
+    if (completedDate) {
+        history.push({
+            title: 'Completed',
+            date: completedDate,
+            isActive: currentStatus === 'completed',
+            isDeclined: false
+        });
+    }
 
-            return history;
-        }
-        // --- End Mock History Data Generation ---
+    // Show declined if date exists
+    if (declinedDate) {
+        history.push({
+            title: 'Declined',
+            date: declinedDate,
+            isActive: currentStatus === 'declined',
+            isDeclined: true
+        });
+    }
 
+    return history;
+}
 
         document.addEventListener('DOMContentLoaded', function() {
             
@@ -367,61 +351,65 @@
                 });
             });
 
+ // History Modal Logic - FIXED VERSION
+    const historyModal = document.getElementById('historyModal');
+    if (historyModal) {
+        historyModal.addEventListener('show.bs.modal', function (event) {
+            const button = event.relatedTarget;
+            const row = button.closest('tr');
+            
+            const requestId = button.getAttribute('data-request-id');
+            const currentStatus = row.getAttribute('data-status');
+            const submittedDate = row.getAttribute('data-submitted-date');
+            const approvedDate = row.getAttribute('data-approved-date');
+            const processingDate = row.getAttribute('data-processing-date');
+            const completedDate = row.getAttribute('data-completed-date');
+            const declinedDate = row.getAttribute('data-declined-date');
+            
+            // Update the modal's title
+            const modalTitle = historyModal.querySelector('#modal-request-id');
+            modalTitle.textContent = requestId;
 
-            // History Modal Logic
-            const historyModal = document.getElementById('historyModal');
-            if (historyModal) {
-                // Event listener for when the modal is about to be shown
-                historyModal.addEventListener('show.bs.modal', function (event) {
-                    const button = event.relatedTarget;
+            const timelineDiv = historyModal.querySelector('#historyTimeline');
+            timelineDiv.innerHTML = '<p class="text-center text-muted">Loading history...</p>';
+            
+            setTimeout(() => {
+                const history = generateRealHistory(
+                    submittedDate, 
+                    approvedDate,
+                    processingDate, 
+                    completedDate, 
+                    declinedDate, 
+                    currentStatus
+                );
+                
+                timelineDiv.innerHTML = '';
+
+                if (history.length === 0) {
+                    timelineDiv.innerHTML = '<p class="text-center text-muted">No history found.</p>';
+                    return;
+                }
+
+                history.forEach(item => {
+                    const itemDiv = document.createElement('div');
+                    itemDiv.className = `timeline-item ${item.isActive ? 'active' : ''} ${item.isDeclined ? 'declined' : ''}`;
                     
-                    // Extract info from data-* attributes
-                    const requestId = button.getAttribute('data-request-id');
-                    const submittedDate = button.getAttribute('data-submitted-date');
-                    const currentStatus = button.getAttribute('data-current-status');
-                    
-                    // Update the modal's title
-                    const modalTitle = historyModal.querySelector('#modal-request-id');
-                    modalTitle.textContent = requestId;
+                    let iconColor = '#0d6efd'; // Default blue
+                    if (item.isActive) {
+                        iconColor = item.isDeclined ? '#dc3545' : '#28a745'; // Red for declined, Green for other active
+                    }
 
-                    const timelineDiv = historyModal.querySelector('#historyTimeline');
-                    timelineDiv.innerHTML = '<p class="text-center text-muted" id="timeline-loading-message"><i class="bi bi-arrow-clockwise"></i> Loading history...</p>';
-                    
-                    // Simulate API call delay (optional)
-                    setTimeout(() => {
-                        const history = generateMockHistory(submittedDate, currentStatus);
-                        timelineDiv.innerHTML = ''; // Clear loading message
-
-                        if (history.length === 0) {
-                            timelineDiv.innerHTML = '<p class="text-center text-muted">No history found.</p>';
-                            return;
-                        }
-
-                        history.forEach(item => {
-                            const itemDiv = document.createElement('div');
-                            // Determine the 'active' class based on the last status reached or the current status
-                            const isActive = item.title.toLowerCase().includes(currentStatus) || 
-                                             (item.title === 'Approved' && (currentStatus === 'processing' || currentStatus === 'completed'));
-                            
-                            itemDiv.className = `timeline-item ${item.isActive ? 'active' : ''}`;
-                            
-                            // Determine the icon and background color for the circle
-                            let iconColor = item.isActive ? '#28a745' : '#0d6efd'; // Success for active, Primary for others
-                            if (item.isDeclined) {
-                                iconColor = '#dc3545'; // Danger for declined
-                            }
-
-                            itemDiv.innerHTML = `
-                                <span class="timeline-item-icon" style="background-color: ${iconColor};"></span>
-                                <span class="timeline-item-date">${item.date}</span>
-                                <div class="timeline-item-title">${item.title}</div>
-                            `;
-                            timelineDiv.appendChild(itemDiv);
-                        });
-                        
-                    }, 500); // 0.5 second delay
+                    itemDiv.innerHTML = `
+                        <span class="timeline-item-icon" style="background-color: ${iconColor};"></span>
+                        <span class="timeline-item-date">${item.date}</span>
+                        <div class="timeline-item-title">${item.title}</div>
+                    `;
+                    timelineDiv.appendChild(itemDiv);
                 });
-            }
+                
+            }, 100);
         });
+    }
+});
     </script>
 </x-resident-layout>

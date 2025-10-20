@@ -31,70 +31,88 @@ class ManageRequestsController extends Controller
         return view('admin.manage-requests', compact('requests'));
     }
 
-    public function updateStatus(Request $request, $id)
-    {
-        try {
-            \Log::info('=== UPDATE STATUS START ===');
-            \Log::info('Request ID: ' . $id);
-            \Log::info('Request data:', $request->all());
-            
-            $validated = $request->validate([
-                'status' => 'required|in:pending,under-review,waiting-payment,processing,completed,declined',
-                'remarks' => 'nullable|string',
-                'fee' => 'nullable|numeric|min:0',
-                'update_payment' => 'nullable|boolean' // Add this for payment updates
-            ]);
+public function updateStatus(Request $request, $id)
+{
+    try {
+        \Log::info('=== UPDATE STATUS START ===');
+        \Log::info('Request ID: ' . $id);
+        \Log::info('Request data:', $request->all());
+        
+        $validated = $request->validate([
+            'status' => 'required|in:pending,under-review,waiting-payment,approved,processing,completed,declined',
+            'remarks' => 'nullable|string',
+            'fee' => 'nullable|numeric|min:0',
+            'update_payment' => 'nullable|boolean'
+        ]);
 
-            // Find service request using request_id (not id)
-            $serviceRequest = ServiceRequest::where('request_id', $id)->first();
-            
-            if (!$serviceRequest) {
-                \Log::error('Service request not found with request_id: ' . $id);
-                return response()->json([
-                    'success' => false,
-                    'message' => 'Service request not found'
-                ], 404);
-            }
-
-            \Log::info('Service Request Found:', [
-                'request_id' => $serviceRequest->request_id,
-                'id' => $serviceRequest->id,
-                'resident_id' => $serviceRequest->resident_id,
-                'current_status' => $serviceRequest->status,
-                'new_status' => $validated['status']
-            ]);
-
-            // Update service request status
-            $oldStatus = $serviceRequest->status;
-            $serviceRequest->status = $validated['status'];
-            $serviceRequest->remarks = $validated['remarks'] ?? $serviceRequest->remarks;
-            $serviceRequest->save();
-
-            \Log::info('Service request updated from "'.$oldStatus.'" to: ' . $validated['status']);
-
-            // PAYMENT HANDLING LOGIC
-            $this->handlePaymentUpdates($serviceRequest, $validated);
-
-            \Log::info('=== UPDATE STATUS SUCCESS ===');
-
-            return response()->json([
-                'success' => true, 
-                'message' => 'Status updated successfully',
-                'new_status' => $validated['status']
-            ]);
-
-        } catch (\Exception $e) {
-            \Log::error('=== UPDATE STATUS FAILED ===');
-            \Log::error('Error: ' . $e->getMessage());
-            \Log::error('File: ' . $e->getFile() . ':' . $e->getLine());
-            \Log::error('Trace: ' . $e->getTraceAsString());
-
+        // Find service request using request_id (not id)
+        $serviceRequest = ServiceRequest::where('request_id', $id)->first();
+        
+        if (!$serviceRequest) {
+            \Log::error('Service request not found with request_id: ' . $id);
             return response()->json([
                 'success' => false,
-                'message' => 'Error updating status: ' . $e->getMessage()
-            ], 500);
+                'message' => 'Service request not found'
+            ], 404);
         }
+
+        \Log::info('Service Request Found:', [
+            'request_id' => $serviceRequest->request_id,
+            'id' => $serviceRequest->id,
+            'resident_id' => $serviceRequest->resident_id,
+            'current_status' => $serviceRequest->status,
+            'new_status' => $validated['status']
+        ]);
+
+        // Update service request status AND DATE COLUMNS
+        $oldStatus = $serviceRequest->status;
+        $serviceRequest->status = $validated['status'];
+        $serviceRequest->remarks = $validated['remarks'] ?? $serviceRequest->remarks;
+        
+        // UPDATE THE DATE COLUMNS BASED ON STATUS
+        $now = now();
+        switch ($validated['status']) {
+            case 'approved': // Add this case
+                $serviceRequest->approved_date = $now;
+                break;
+            case 'processing':
+                $serviceRequest->processing_date = $now;
+                break;
+            case 'completed':
+                $serviceRequest->completed_date = $now;
+                break;
+            case 'declined':
+                $serviceRequest->declined_date = $now;
+                break;
+        }
+                
+        $serviceRequest->save();
+
+        \Log::info('Service request updated from "'.$oldStatus.'" to: ' . $validated['status']);
+
+        // PAYMENT HANDLING LOGIC
+        $this->handlePaymentUpdates($serviceRequest, $validated);
+
+        \Log::info('=== UPDATE STATUS SUCCESS ===');
+
+        return response()->json([
+            'success' => true, 
+            'message' => 'Status updated successfully',
+            'new_status' => $validated['status']
+        ]);
+
+    } catch (\Exception $e) {
+        \Log::error('=== UPDATE STATUS FAILED ===');
+        \Log::error('Error: ' . $e->getMessage());
+        \Log::error('File: ' . $e->getFile() . ':' . $e->getLine());
+        \Log::error('Trace: ' . $e->getTraceAsString());
+
+        return response()->json([
+            'success' => false,
+            'message' => 'Error updating status: ' . $e->getMessage()
+        ], 500);
     }
+}
 
     /**
      * Handle payment creation and updates based on request status
@@ -215,6 +233,11 @@ class ManageRequestsController extends Controller
                     ]);
                     \Log::info('Payment cancelled for declined request: ' . $serviceRequest->request_id);
                 }
+                break;
+
+            case 'approved':
+                \Log::info('Request approved, no payment action needed yet');
+                // You can add payment creation here if needed, or leave it for waiting-payment
                 break;
 
             default:
