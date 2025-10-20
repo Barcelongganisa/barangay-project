@@ -25,6 +25,10 @@ class User extends Authenticatable
         'gender', 
         'years_of_residency', 
         'valid_id_path',
+        'approval_status', // ADD THIS LINE
+        'approved_at', // ADD THIS LINE
+        'declined_at', // ADD THIS LINE
+        'decline_reason', // ADD THIS LINE
     ];
 
     /**
@@ -47,7 +51,59 @@ class User extends Authenticatable
         return [
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
+            'approved_at' => 'datetime', // ADD THIS LINE
+            'declined_at' => 'datetime', // ADD THIS LINE
         ];
+    }
+
+    // ADD THESE METHODS FOR APPROVAL SYSTEM:
+    
+    /**
+     * Scope for approved users
+     */
+    public function scopeApproved($query)
+    {
+        return $query->where('approval_status', 'approved');
+    }
+
+    /**
+     * Scope for pending users
+     */
+    public function scopePending($query)
+    {
+        return $query->where('approval_status', 'pending');
+    }
+
+    /**
+     * Scope for declined users
+     */
+    public function scopeDeclined($query)
+    {
+        return $query->where('approval_status', 'declined');
+    }
+
+    /**
+     * Check if user is approved
+     */
+    public function isApproved()
+    {
+        return $this->approval_status === 'approved';
+    }
+
+    /**
+     * Check if user is pending
+     */
+    public function isPending()
+    {
+        return $this->approval_status === 'pending';
+    }
+
+    /**
+     * Check if user is declined
+     */
+    public function isDeclined()
+    {
+        return $this->approval_status === 'declined';
     }
 
     /**
@@ -56,7 +112,7 @@ class User extends Authenticatable
     protected static function booted()
     {
         static::created(function ($user) {
-            // Only create if not already existing
+            // Only create if not already existing AND when user is approved
             if (!\App\Models\BarangayResident::where('resident_id', $user->id)->exists()) {
                 \App\Models\BarangayResident::create([
                     'resident_id' => $user->id,

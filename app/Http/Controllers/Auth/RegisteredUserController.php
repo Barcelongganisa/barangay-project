@@ -44,7 +44,7 @@ class RegisteredUserController extends Controller
         // Handle file upload - MAKE SURE THIS LINE EXISTS
         $validIdPath = $request->file('valid_id')->store('valid_ids', 'public');
 
-        // Create User
+        // Create User - ADD APPROVAL STATUS FIELDS
         $user = User::create([
             'name' => $request->name,
             'email' => $request->email,
@@ -55,34 +55,24 @@ class RegisteredUserController extends Controller
             'gender' => $request->gender,
             'years_of_residency' => $request->years_of_residency,
             'valid_id_path' => $validIdPath,
+            'approval_status' => 'pending', // ADD THIS LINE
+            'approved_at' => null, // ADD THIS LINE
+            'declined_at' => null, // ADD THIS LINE
+            'decline_reason' => null, // ADD THIS LINE
         ]);
-
-        // Create corresponding BarangayResident --> turning this on will cause error on registration as this duplicates the creation in User model
-        // BarangayResident::create([
-        //     'resident_id' => $user->id, // crucial!
-        //     'first_name' => $request->name,
-        //     'middle_name' => null,
-        //     'last_name' => '',
-        //     'email' => $request->email,
-        //     'barangay_name' => 'Default Barangay',
-        //     'contact_number' => '',
-        //     'date_of_birth' => $request->birthday,
-        //     'gender' => $request->gender,
-        //     'civil_status' => 'Single',
-        //     'occupation' => 'N/A',
-        //     'address' => $request->address,
-        //     'valid_id_path' => $validIdPath, 
-        // ]);
-
 
         event(new Registered($user));
 
-        Auth::login($user);
+        // DON'T LOGIN AUTOMATICALLY - REMOVE THESE LINES:
+        // Auth::login($user);
+        //
+        // if ($user->role === 'admin') {
+        //     return redirect()->route('admin.dashboard');
+        // } else {
+        //     return redirect()->route('dashboard');
+        // }
 
-        if ($user->role === 'admin') {
-            return redirect()->route('admin.dashboard');
-        } else {
-            return redirect()->route('dashboard');
-        }
+        // REPLACE WITH THIS:
+        return redirect()->route('register')->with('status', 'Registration submitted! Please wait for admin approval. You will receive an email once your account is approved.');
     }
 }
