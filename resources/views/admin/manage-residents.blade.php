@@ -539,6 +539,25 @@ document.addEventListener('DOMContentLoaded', function() {
                 document.getElementById('modal-civil-status').textContent = resident.civil_status || 'Not specified';
                 document.getElementById('modal-occupation').textContent = resident.occupation || 'Not specified';
                 document.getElementById('modal-registration-date').textContent = resident.created_at ? new Date(resident.created_at).toLocaleDateString() : 'Not specified';
+
+                // Handle Valid ID display - FIXED: Use data.valid_id_path instead of validIdPath
+                const validIdLink = document.getElementById('modal-valid-id-link');
+                const validIdImage = document.getElementById('modal-valid-id-image');
+                const validIdNotProvided = document.getElementById('modal-valid-id-not-provided');
+
+                if (data.valid_id_path) { // FIX: Use data.valid_id_path
+                    // Show the image/link
+                    validIdLink.style.display = 'block';
+                    validIdImage.src = `/storage/${data.valid_id_path}`; // FIX: Use data.valid_id_path
+                    validIdLink.href = `/storage/${data.valid_id_path}`; // FIX: Use data.valid_id_path
+                    validIdNotProvided.style.display = 'none';
+                } else {
+                    // Hide the image/link and show "not provided" message
+                    validIdLink.style.display = 'none';
+                    validIdImage.src = '';
+                    validIdLink.href = '#';
+                    validIdNotProvided.style.display = 'block';
+                }
             }
         } catch (error) {
             console.error('Error loading resident details:', error);

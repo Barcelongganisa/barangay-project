@@ -164,7 +164,7 @@ class ManageRequestsController extends Controller
                 if ($existingPayment) {
                     $existingPayment->update([
                         'status' => 'paid',
-                        'paid_at' => now(),
+                        // 'paid_at' => now(),
                         'updated_at' => now()
                     ]);
                     \Log::info('Payment updated to paid for request: ' . $serviceRequest->request_id);
@@ -178,7 +178,7 @@ class ManageRequestsController extends Controller
                         'amount' => $fee,
                         'status' => 'paid',
                         'payment_method' => 'cash',
-                        'paid_at' => now(),
+                        // 'paid_at' => now(),
                         'notes' => 'Processing fee for ' . $serviceRequest->request_type . ' - Auto created',
                         'created_at' => now(),
                         'updated_at' => now()
@@ -196,7 +196,7 @@ class ManageRequestsController extends Controller
                     if ($existingPayment->status === 'pending') {
                         $existingPayment->update([
                             'status' => 'paid',
-                            'paid_at' => now(),
+                            // 'paid_at' => now(),
                             'updated_at' => now()
                         ]);
                         \Log::info('Payment auto-updated to paid for completed request: ' . $serviceRequest->request_id);
@@ -212,7 +212,7 @@ class ManageRequestsController extends Controller
                             'amount' => 0,
                             'status' => 'paid',
                             'payment_method' => 'free',
-                            'paid_at' => now(),
+                            // 'paid_at' => now(),
                             'notes' => 'No fee required for ' . $serviceRequest->request_type,
                             'created_at' => now(),
                             'updated_at' => now()

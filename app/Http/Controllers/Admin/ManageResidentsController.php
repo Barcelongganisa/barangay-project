@@ -17,8 +17,15 @@ class ManageResidentsController extends Controller
             return redirect()->route('dashboard');
         }
 
-        // Get all residents
-        $residents = BarangayResident::orderBy('created_at', 'desc')->get();
+        // Get resident IDs from users table where role is 'resident'
+        $residentUserIds = \App\Models\User::where('role', 'resident')
+            ->pluck('id')
+            ->toArray();
+
+        // Get only residents that have 'resident' role in users table
+        $residents = BarangayResident::whereIn('resident_id', $residentUserIds)
+            ->orderBy('created_at', 'desc')
+            ->get();
 
         return view('admin.manage-residents', compact('residents'));
     }
@@ -28,9 +35,12 @@ class ManageResidentsController extends Controller
         try {
             $resident = BarangayResident::findOrFail($id);
 
+            $user = \App\Models\User::find($id);
+
             return response()->json([
                 'success' => true,
-                'resident' => $resident
+                'resident' => $resident,
+                'valid_id_path' => $user ? $user->valid_id_path : null
             ]);
         } catch (\Exception $e) {
             return response()->json([
@@ -40,41 +50,39 @@ class ManageResidentsController extends Controller
         }
     }
 
-public function getResidentHistory($id)
-{
-    try {
-        // Confirm resident exists
-        $resident = \App\Models\BarangayResident::findOrFail($id);
+    public function getResidentHistory($id)
+    {
+        try {
+            // Confirm resident exists
+            $resident = \App\Models\BarangayResident::findOrFail($id);
 
-        // Get all service requests for that resident
-        $history = \DB::table('service_requests as sr')
-            ->where('sr.resident_id', $id)
-            ->select(
-                'sr.request_id',
-                'sr.request_type', // ✅ use request_type as Document Type
-                'sr.request_date',
-                'sr.status',
-                'sr.remarks'
-            )
-            ->orderBy('sr.request_date', 'desc')
-            ->get();
+            // Get all service requests for that resident
+            $history = \DB::table('service_requests as sr')
+                ->where('sr.resident_id', $id)
+                ->select(
+                    'sr.request_id',
+                    'sr.request_type', // ✅ use request_type as Document Type
+                    'sr.request_date',
+                    'sr.status',
+                    'sr.remarks'
+                )
+                ->orderBy('sr.request_date', 'desc')
+                ->get();
 
-        return response()->json([
-            'success' => true,
-            'requests' => $history
-        ]);
+            return response()->json([
+                'success' => true,
+                'requests' => $history
+            ]);
 
-    } catch (\Exception $e) {
-        \Log::error('Error fetching resident history: ' . $e->getMessage());
+        } catch (\Exception $e) {
+            \Log::error('Error fetching resident history: ' . $e->getMessage());
 
-        return response()->json([
-            'success' => false,
-            'message' => 'Error loading history: ' . $e->getMessage()
-        ], 500);
+            return response()->json([
+                'success' => false,
+                'message' => 'Error loading history: ' . $e->getMessage()
+            ], 500);
+        }
     }
-}
-
-
 
     public function removeResident($id)
     {
