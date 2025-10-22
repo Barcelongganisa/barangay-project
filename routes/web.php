@@ -95,5 +95,19 @@ Route::get('/test-approved', function () {
     return 'Middleware works!';
 })->middleware('approved');
 
+Route::get('/test-smtp', function () {
+    try {
+        // Test basic email
+        \Mail::raw('Hello! This is a test email from SMTP.', function ($message) {
+            $message->to('barcelonjustinebenedict.bsit@gmail.com')
+                    ->subject('SMTP Test from Laravel');
+        });
+        
+        return "✅ SMTP is working! Check your email.";
+        
+    } catch (\Exception $e) {
+        return "❌ SMTP Error: " . $e->getMessage();
+    }
+});
 
 require __DIR__.'/auth.php';

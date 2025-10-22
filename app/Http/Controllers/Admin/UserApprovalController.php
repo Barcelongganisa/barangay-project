@@ -5,9 +5,9 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Models\User;
 use Illuminate\Http\Request;
-// use Illuminate\Support\Facades\Mail;
-// use App\Mail\AccountApproved;
-// use App\Mail\AccountDeclined;
+use Illuminate\Support\Facades\Mail;
+use App\Mail\AccountApproved;
+use App\Mail\AccountDeclined;
 
 class UserApprovalController extends Controller
 {
@@ -22,46 +22,64 @@ class UserApprovalController extends Controller
 
     public function approveUser(Request $request, $id)
     {
-        $user = User::findOrFail($id);
-        
-        $user->update([
-            'approval_status' => 'approved',
-            'approved_at' => now(),
-            'decline_reason' => null,
-            'declined_at' => null,
-        ]);
+        try {
+            $user = User::findOrFail($id);
+            
+            $user->update([
+                'approval_status' => 'approved',
+                'approved_at' => now(),
+                'decline_reason' => null,
+                'declined_at' => null,
+            ]);
 
-        // Send approval email
-        // Mail::to($user->email)->send(new AccountApproved($user));
+            // Send approval email - UNCOMMENTED
+            Mail::to($user->email)->send(new AccountApproved($user));
 
-        return response()->json([
-            'success' => true,
-            'message' => 'User approved successfully!'
-        ]);
+            return response()->json([
+                'success' => true,
+                'message' => 'User approved successfully and notification email sent!'
+            ]);
+
+        } catch (\Exception $e) {
+            \Log::error('Error approving user: ' . $e->getMessage());
+            return response()->json([
+                'success' => false,
+                'message' => 'Error: ' . $e->getMessage()
+            ], 500);
+        }
     }
 
     public function declineUser(Request $request, $id)
     {
-        $request->validate([
-            'reason' => 'required|string|max:500'
-        ]);
+        try {
+            $request->validate([
+                'reason' => 'required|string|max:500'
+            ]);
 
-        $user = User::findOrFail($id);
-        
-        $user->update([
-            'approval_status' => 'declined',
-            'decline_reason' => $request->reason,
-            'declined_at' => now(),
-            'approved_at' => null,
-        ]);
+            $user = User::findOrFail($id);
+            
+            $user->update([
+                'approval_status' => 'declined',
+                'decline_reason' => $request->reason,
+                'declined_at' => now(),
+                'approved_at' => null,
+            ]);
 
-        // Send decline email
-        // Mail::to($user->email)->send(new AccountDeclined($user, $request->reason));
+            // Send decline email - UNCOMMENTED
+            Mail::to($user->email)->send(new AccountDeclined($user, $request->reason));
 
-        return response()->json([
-            'success' => true,
-            'message' => 'User declined successfully!'
-        ]);
+            return response()->json([
+                'success' => true,
+                'message' => 'User declined successfully and notification email sent!'
+            ]);
+
+        } catch (\Exception $e) {
+            \Log::error('Error declining user: ' . $e->getMessage());
+            return response()->json([
+                'success' => false,
+                'message' => 'Error: ' . $e->getMessage()
+            ], 500);
+        }
     }
 
     public function getUserDetails($id)
