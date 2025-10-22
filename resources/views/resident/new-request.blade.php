@@ -403,12 +403,16 @@
                         </div>
                     </div>
 
-                    <div class="form-check mb-4">
-                        <input class="form-check-input" type="checkbox" id="terms-agreement">
-                        <label class="form-check-label" for="terms-agreement">
-                            I certify that the information provided is true and correct. I understand that providing false information may result in penalties.
+                    <div class="p-3 border-start border-4 border-primary rounded-2 bg-white shadow-sm mb-4">
+                    <div class="form-check m-0">
+                        <input class="form-check-input me-2" type="checkbox" id="terms-agreement">
+                        <label class="form-check-label fw-semibold" for="terms-agreement">
+                        I hereby certify that the information provided is <strong>true and correct</strong>. I understand that providing
+                        false information may result in penalties and disapproval of my request.
                         </label>
                     </div>
+                    </div>
+
 
                     <div class="d-flex justify-content-between mt-4">
                         <button class="btn btn-secondary" id="backToStep3"><i class="bi bi-arrow-left"></i> Back</button>
@@ -619,25 +623,25 @@
 
                 // Generate document requirements
                 const documentsContainer = document.getElementById('required-documents');
-                let documentsHTML = '<div class="row g-3">';
+let documentsHTML = '<div class="row g-3">';
 
-                serviceDetails[selectedService].documents.forEach((doc, index) => {
-                    documentsHTML += `
-                        <div class="col-md-6">
-                            <div class="mb-3">
-                                <label class="form-label">${doc.name} ${doc.required ? '<span class="text-danger">*</span>' : ''}</label>
-                                <div class="input-group">
-                                    <input type="file" class="form-control" id="doc-${index}" ${doc.required ? 'required' : ''}>
-                                    <button class="btn btn-outline-secondary" type="button" onclick="document.getElementById('doc-${index}').value=''">Clear</button>
-                                </div>
-                                <div class="form-text">${doc.required ? 'Required document' : 'Optional document'}</div>
-                            </div>
-                        </div>
-                    `;
-                });
+serviceDetails[selectedService].documents.forEach((doc, index) => {
+    documentsHTML += `
+        <div class="col-md-6">
+            <div class="mb-3">
+                <label class="form-label">${doc.name} ${doc.required ? '<span class="text-danger">*</span>' : ''}</label>
+                <div class="input-group">
+                    <input type="file" class="form-control" id="doc-${index}" ${doc.required ? 'required' : ''}>
+                    <button class="btn btn-outline-secondary" type="button" onclick="document.getElementById('doc-${index}').value=''">Clear</button>
+                </div>
+                <div class="form-text">${doc.required ? 'Required document' : 'Optional document'}</div>
+            </div>
+        </div>
+    `;
+});
 
-            documentsHTML += '</div>'; // close row
-            documentsContainer.innerHTML = documentsHTML;
+documentsHTML += '</div>'; // close row
+documentsContainer.innerHTML = documentsHTML;
 
             });
 
