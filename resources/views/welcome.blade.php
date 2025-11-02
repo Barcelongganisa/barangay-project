@@ -176,34 +176,57 @@
                                         <input type="email" name="email" class="form-control" required placeholder="Enter your email" autocomplete="off">
                                     </div>
 
-                                    <!-- Address -->
-                                    <div class="mb-3">
-                                        <label class="form-label">Address</label>
-                                        <input type="text" name="address" class="form-control" required placeholder="Enter your address" autocomplete="off">
-                                    </div>
+                                   <!-- Address -->
+<div class="mb-3">
+    <label class="form-label">Address</label>
+    <input type="text" name="address" class="form-control" required placeholder="Enter your address" autocomplete="off">
+</div>
 
-                                    <!-- Birthday -->
-                                    <div class="mb-3">
-                                        <label class="form-label">Birthday</label>
-                                        <input type="date" name="birthday" class="form-control" required>
-                                    </div>
+<!-- Contact Number -->
+<div class="mb-3">
+    <label class="form-label">Contact Number</label>
+    <input type="text" 
+           name="contact_number" 
+           class="form-control" 
+           placeholder="Enter your contact number"
+           pattern="[0-9]{11}" 
+           inputmode="numeric"
+           maxlength="11"
+           minlength="11"
+           required
+           title="Please enter exactly 11 digits (numbers only).">
+</div>
 
-                                    <!-- Gender -->
-                                    <div class="mb-3">
-                                        <label class="form-label">Gender</label>
-                                        <select name="gender" class="form-select" required>
-                                            <option value="" disabled selected>Select your gender</option>
-                                            <option value="Male">Male</option>
-                                            <option value="Female">Female</option>
-                                            <option value="Other">Other</option>
-                                        </select>
-                                    </div>
+<!-- Birthday -->
+<div class="mb-3">
+    <label class="form-label">Birthday</label>
+    <input type="date" name="birthday" class="form-control" required>
+</div>
 
-                                    <!-- Years of Residency -->
-                                    <div class="mb-3">
-                                        <label class="form-label">Years of Residency</label>
-                                        <input type="number" name="years_of_residency" class="form-control" placeholder="Enter number of years" required>
-                                    </div>
+<!-- Gender -->
+<div class="mb-3">
+    <label class="form-label">Gender</label>
+    <select name="gender" class="form-select" required>
+        <option value="" disabled selected>Select your gender</option>
+        <option value="Male">Male</option>
+        <option value="Female">Female</option>
+        <option value="Other">Other</option>
+    </select>
+</div>
+
+<!-- Years of Residency -->
+<div class="mb-3">
+    <label class="form-label">Years of Residency</label>
+    <input type="number" 
+           name="years_of_residency" 
+           class="form-control" 
+           placeholder="Enter number of years" 
+           required 
+           min="0" 
+           max="999" 
+           oninput="this.value = this.value.slice(0, 3)">
+</div>
+
 
                                     <!-- Valid ID Upload -->
                                     <div class="mb-3">
